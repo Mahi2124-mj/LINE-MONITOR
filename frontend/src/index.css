@@ -1,0 +1,149 @@
+@import 'tailwindcss';
+
+/* Control-room dark theme tokens. Usage: bg-canvas, bg-panel, bg-panel-2, border-edge, text-ink, text-ink-2, text-ink-3 */
+@theme {
+  --color-canvas: #0a0c0f;
+  --color-panel: #111419;
+  --color-panel-2: #171b21;
+  --color-panel-3: #1e232b;
+  --color-edge: #252b34;
+  --color-edge-2: #323a45;
+  --color-ink: #e6e9ee;
+  --color-ink-2: #a3acb9;
+  --color-ink-3: #6b7482;
+
+  /* chart fills (validated for the dark surface) */
+  --color-work: #059669;
+  --color-waste: #ea580c;
+  --color-wait: #64748b;
+
+  --font-sans: 'Inter', 'Segoe UI Variable', 'Segoe UI', ui-sans-serif, system-ui, -apple-system, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Cascadia Mono', Consolas, ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
+  --animate-slide-in: slide-in 0.25s ease-out;
+
+  @keyframes pulse-soft {
+    0%,
+    100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.45;
+    }
+  }
+  @keyframes slide-in {
+    from {
+      transform: translateY(8px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  html {
+    color-scheme: dark;
+  }
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-variant-numeric: tabular-nums;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+  ::selection {
+    background: rgb(16 185 129 / 0.35);
+  }
+  /* thin dark scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #323a45 transparent;
+  }
+  input,
+  select,
+  textarea,
+  button {
+    font: inherit;
+  }
+  input[type='number']::-webkit-inner-spin-button {
+    opacity: 0.4;
+  }
+}
+
+@layer components {
+  .input {
+    @apply w-full rounded-md border border-edge bg-canvas px-2.5 py-1.5 text-sm text-ink placeholder:text-ink-3 outline-none transition focus:border-sky-500/70 focus:ring-2 focus:ring-sky-500/20 disabled:opacity-50;
+  }
+  select.input {
+    @apply pr-7;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md border border-edge-2 bg-panel-3 px-3 py-1.5 text-sm font-medium text-ink transition hover:border-ink-3 hover:bg-edge disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply px-2 py-1 text-xs;
+  }
+  .btn-primary {
+    @apply border-sky-600 bg-sky-600 text-white hover:border-sky-500 hover:bg-sky-500;
+  }
+  .btn-danger {
+    @apply border-red-700/80 bg-red-900/40 text-red-200 hover:border-red-500 hover:bg-red-800/60;
+  }
+  .btn-ghost {
+    @apply border-transparent bg-transparent text-ink-2 hover:border-edge hover:bg-panel-3 hover:text-ink;
+  }
+  .label {
+    @apply mb-1 block text-xs font-medium tracking-wide text-ink-2;
+  }
+  .hint {
+    @apply mt-1 text-[11px] leading-snug text-ink-3;
+  }
+  .link {
+    @apply text-sky-400 hover:text-sky-300 hover:underline;
+  }
+  .table-dense {
+    @apply w-full border-collapse text-sm;
+  }
+  .table-dense th {
+    @apply sticky top-0 z-10 border-b border-edge bg-panel-2 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap text-ink-3;
+  }
+  .table-dense td {
+    @apply border-b border-edge/60 px-3 py-1.5 whitespace-nowrap;
+  }
+  .table-dense tbody tr:hover td {
+    @apply bg-panel-2/70;
+  }
+}
+
+/* Recharts dark-mode polish */
+.recharts-cartesian-axis-tick-value {
+  fill: var(--color-ink-2);
+  font-size: 11px;
+}
+.recharts-cartesian-grid line {
+  stroke: #1f252d;
+}
+.recharts-text.recharts-label {
+  fill: var(--color-ink-2);
+  font-size: 11px;
+}
+.recharts-legend-item-text {
+  color: var(--color-ink-2) !important;
+  font-size: 12px;
+}
+.recharts-wrapper:focus,
+.recharts-surface:focus,
+.recharts-wrapper *:focus {
+  outline: none;
+}

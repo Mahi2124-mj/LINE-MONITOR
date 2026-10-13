@@ -1,0 +1,163 @@
+[
+ {
+  "walk_to_fixture": 1791569095.71,
+  "fixture_work_1": 1791569097.11,
+  "load_fixture": 1791569100.24,
+  "two_hand_handling": 1791569101.28,
+  "turn_carry_to_box": 1791569102.67,
+  "at_box": 1791569103.71,
+  "end": 1791569107.88,
+  "reach_into_bin": 1791569099.53
+ },
+ {
+  "walk_to_fixture": 1791569107.88,
+  "fixture_work_1": 1791569109.26,
+  "load_fixture": 1791569112.36,
+  "two_hand_handling": 1791569113.41,
+  "turn_carry_to_box": 1791569115.17,
+  "at_box": 1791569115.86,
+  "end": 1791569121.44,
+  "reach_into_bin": 1791569111.67
+ },
+ {
+  "walk_to_fixture": 1791569121.44,
+  "fixture_work_1": 1791569122.83,
+  "load_fixture": 1791569125.61,
+  "two_hand_handling": 1791569126.64,
+  "turn_carry_to_box": 1791569128.38,
+  "at_box": 1791569129.42,
+  "end": 1791569133.59,
+  "reach_into_bin": 1791569124.91
+ },
+ {
+  "walk_to_fixture": 1791569133.59,
+  "fixture_work_1": 1791569134.98,
+  "load_fixture": 1791569139.83,
+  "two_hand_handling": 1791569140.88,
+  "turn_carry_to_box": 1791569142.26,
+  "at_box": 1791569143.29,
+  "end": 1791569147.25,
+  "reach_into_bin": 1791569139.13
+ },
+ {
+  "walk_to_fixture": 1791569147.25,
+  "fixture_work_1": 1791569148.63,
+  "load_fixture": 1791569151.72,
+  "two_hand_handling": 1791569153.1,
+  "turn_carry_to_box": 1791569155.19,
+  "at_box": 1791569156.22,
+  "end": 1791569161.41,
+  "reach_into_bin": 1791569151.04
+ },
+ {
+  "walk_to_fixture": 1791569161.41,
+  "fixture_work_1": 1791569163.49,
+  "load_fixture": 1791569166.26,
+  "two_hand_handling": 1791569167.99,
+  "turn_carry_to_box": 1791569170.76,
+  "at_box": 1791569171.81,
+  "end": 1791569174.58,
+  "reach_into_bin": 1791569165.57
+ },
+ {
+  "walk_to_fixture": 1791569174.58,
+  "fixture_work_1": 1791569176.33,
+  "load_fixture": 1791569179.45,
+  "two_hand_handling": 1791569181.19,
+  "turn_carry_to_box": 1791569183.28,
+  "at_box": 1791569184.31,
+  "end": 1791569187.44,
+  "reach_into_bin": 1791569178.75
+ },
+ {
+  "walk_to_fixture": 1791569187.44,
+  "fixture_work_1": 1791569188.82,
+  "load_fixture": 1791569191.94,
+  "two_hand_handling": 1791569193.32,
+  "turn_carry_to_box": 1791569195.11,
+  "at_box": 1791569196.52,
+  "end": 1791569201.72,
+  "reach_into_bin": 1791569191.24
+ },
+ {
+  "walk_to_fixture": 1791569201.72,
+  "fixture_work_1": 1791569203.11,
+  "load_fixture": 1791569209.32,
+  "two_hand_handling": 1791569210.35,
+  "turn_carry_to_box": 1791569211.73,
+  "at_box": 1791569212.76,
+  "end": 1791569215.54,
+  "reach_into_bin": 1791569208.63
+ },
+ {
+  "walk_to_fixture": 1791569215.54,
+  "fixture_work_1": 1791569216.97,
+  "load_fixture": 1791569220.43,
+  "two_hand_handling": 1791569221.82,
+  "turn_carry_to_box": 1791569223.21,
+  "at_box": 1791569224.25,
+  "end": 1791569228.42,
+  "reach_into_bin": 1791569219.05
+ },
+ {
+  "walk_to_fixture": 1791569228.42,
+  "fixture_work_1": 1791569229.81,
+  "load_fixture": 1791569233.98,
+  "two_hand_handling": 1791569235.01,
+  "turn_carry_to_box": 1791569236.41,
+  "at_box": 1791569237.1,
+  "end": 1791569240.92,
+  "reach_into_bin": 1791569232.94
+ },
+ {
+  "walk_to_fixture": 1791569240.92,
+  "fixture_work_1": 1791569243.0,
+  "load_fixture": 1791569246.13,
+  "two_hand_handling": 1791569247.18,
+  "turn_carry_to_box": 1791569248.92,
+  "at_box": 1791569249.96,
+  "end": 1791569253.08,
+  "reach_into_bin": 1791569245.09
+ },
+ {
+  "walk_to_fixture": 1791569253.08,
+  "fixture_work_1": 1791569255.16,
+  "load_fixture": 1791569260.01,
+  "two_hand_handling": 1791569261.06,
+  "turn_carry_to_box": 1791569262.8,
+  "at_box": 1791569263.84,
+  "end": 1791569266.26,
+  "reach_into_bin": 1791569256.55
+ },
+ {
+  "walk_to_fixture": 1791569266.26,
+  "fixture_work_1": 1791569268.27,
+  "load_fixture": 1791569272.92,
+  "two_hand_handling": 1791569274.31,
+  "turn_carry_to_box": 1791569276.05,
+  "at_box": 1791569276.74,
+  "end": 1791569279.19,
+  "reach_into_bin": 1791569272.23,
+  "bin_change": 1791569270.14
+ },
+ {
+  "walk_to_fixture": 1791569279.19,
+  "fixture_work_1": 1791569280.58,
+  "load_fixture": 1791569284.05,
+  "two_hand_handling": 1791569285.09,
+  "turn_carry_to_box": 1791569286.47,
+  "at_box": 1791569286.82,
+  "end": 1791569292.4,
+  "reach_into_bin": 1791569283.01
+ },
+ {
+  "walk_to_fixture": 1791569292.4,
+  "fixture_work_1": 1791569293.78,
+  "load_fixture": 1791569296.98,
+  "two_hand_handling": 1791569298.02,
+  "turn_carry_to_box": 1791569299.77,
+  "at_box": 1791569300.47,
+  "end": 1791569305.08,
+  "reach_into_bin": 1791569296.27
+ }
+]

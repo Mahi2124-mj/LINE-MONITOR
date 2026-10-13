@@ -1,0 +1,200 @@
+[
+ {
+  "start": 1791569159.07,
+  "rack_arrive": 1791569161.17,
+  "rack_leave": 1791569165.0,
+  "nest_in": 1791569167.09,
+  "nest_out": 1791569168.47,
+  "place_chute": 1791569170.21,
+  "reach_holder": 1791569170.56,
+  "end": 1791569171.25,
+  "note": ""
+ },
+ {
+  "start": 1791569171.25,
+  "rack_arrive": 1791569173.34,
+  "rack_leave": 1791569177.85,
+  "nest_in": 1791569179.94,
+  "nest_out": 1791569181.34,
+  "place_chute": 1791569182.77,
+  "reach_holder": 1791569183.46,
+  "end": 1791569184.16,
+  "note": ""
+ },
+ {
+  "start": 1791569184.16,
+  "rack_arrive": 1791569186.59,
+  "rack_leave": 1791569193.23,
+  "nest_in": 1791569195.3,
+  "nest_out": 1791569196.69,
+  "place_chute": 1791569198.42,
+  "reach_holder": 1791569199.11,
+  "end": 1791569199.46,
+  "note": "3rd person walks behind A at the rack (31.8-33.5); rack 6.6 s"
+ },
+ {
+  "start": 1791569199.46,
+  "rack_arrive": 1791569201.55,
+  "rack_leave": 1791569206.67,
+  "nest_in": 1791569208.26,
+  "nest_out": 1791569209.65,
+  "place_chute": 1791569211.38,
+  "reach_holder": 1791569212.08,
+  "end": 1791569212.76,
+  "note": ""
+ },
+ {
+  "start": 1791569212.76,
+  "rack_arrive": 1791569215.19,
+  "rack_leave": 1791569219.37,
+  "nest_in": 1791569221.46,
+  "nest_out": 1791569222.86,
+  "place_chute": 1791569223.91,
+  "reach_holder": 1791569224.6,
+  "end": 1791569225.29,
+  "note": "3rd person passes bottom-left of rack (56.6-58.0)"
+ },
+ {
+  "start": 1791569225.29,
+  "rack_arrive": 1791569227.38,
+  "rack_leave": 1791569232.24,
+  "nest_in": 1791569233.96,
+  "nest_out": 1791569235.01,
+  "place_chute": 1791569235.69,
+  "reach_holder": 1791569236.04,
+  "end": 1791569236.74,
+  "note": "A touches face/cap ~0.7 s before nest (13.28-13.63); check only 0.7 s"
+ },
+ {
+  "start": 1791569236.74,
+  "rack_arrive": 1791569239.16,
+  "rack_leave": 1791569243.68,
+  "nest_in": 1791569245.77,
+  "nest_out": 1791569247.16,
+  "place_chute": 1791569247.51,
+  "reach_holder": 1791569248.2,
+  "end": 1791569248.55,
+  "note": "3rd person passes bottom-left (19.9-21.3); no upright check (rail held at waist 0.35 s)"
+ },
+ {
+  "start": 1791569248.55,
+  "rack_arrive": 1791569250.97,
+  "rack_leave": 1791569256.55,
+  "nest_in": 1791569257.58,
+  "nest_out": 1791569258.97,
+  "place_chute": 1791569259.66,
+  "reach_holder": 1791569260.01,
+  "end": 1791569260.71,
+  "note": "short check 0.7 s"
+ },
+ {
+  "start": 1791569260.71,
+  "rack_arrive": 1791569263.49,
+  "rack_leave": 1791569267.31,
+  "nest_in": 1791569270.14,
+  "nest_out": 1791569271.18,
+  "place_chute": 1791569271.53,
+  "reach_holder": 1791569271.88,
+  "end": 1791569272.57,
+  "note": "3rd person passes bottom-left (44.2-44.9); no upright check"
+ },
+ {
+  "start": 1791569272.57,
+  "rack_arrive": 1791569275.0,
+  "rack_leave": 1791569279.2,
+  "nest_in": 1791569281.64,
+  "nest_out": 1791569282.69,
+  "place_chute": 1791569283.37,
+  "reach_holder": 1791569283.72,
+  "end": 1791569284.41,
+  "note": "short check 0.7 s"
+ },
+ {
+  "start": 1791569284.41,
+  "rack_arrive": 1791569286.84,
+  "rack_leave": 1791569291.34,
+  "nest_in": 1791569293.77,
+  "nest_out": 1791569294.81,
+  "place_chute": 1791569295.17,
+  "reach_holder": 1791569295.51,
+  "end": 1791569296.23,
+  "note": "no upright check"
+ },
+ {
+  "start": 1791569296.23,
+  "rack_arrive": 1791569298.68,
+  "rack_leave": 1791569303.32,
+  "nest_in": 1791569305.75,
+  "nest_out": 1791569306.43,
+  "place_chute": 1791569306.78,
+  "reach_holder": 1791569307.46,
+  "end": 1791569308.16,
+  "note": "no upright check"
+ },
+ {
+  "start": 1791569308.16,
+  "rack_arrive": 1791569310.6,
+  "rack_leave": 1791569315.14,
+  "nest_in": 1791569317.58,
+  "nest_out": 1791569318.28,
+  "place_chute": 1791569318.62,
+  "reach_holder": 1791569319.32,
+  "end": 1791569320.02,
+  "note": "no upright check"
+ },
+ {
+  "start": 1791569320.02,
+  "rack_arrive": 1791569322.47,
+  "rack_leave": 1791569328.03,
+  "nest_in": 1791569330.53,
+  "nest_out": 1791569331.88,
+  "place_chute": 1791569332.91,
+  "reach_holder": 1791569333.26,
+  "end": 1791569334.3,
+  "note": "rack 5.6 s; upright check facing camera 1.0 s"
+ },
+ {
+  "start": 1791569334.3,
+  "rack_arrive": 1791569338.47,
+  "rack_leave": 1791569348.17,
+  "nest_in": 1791569350.24,
+  "nest_out": 1791569351.28,
+  "place_chute": 1791569351.63,
+  "reach_holder": 1791569352.32,
+  "end": 1791569353.01,
+  "note": "ABNORMAL: after pick A stays at m/c ~3 s (turns to camera 54.6-55.7, hands back at m/c front 56.7-57.4); rack 9.7 s"
+ },
+ {
+  "start": 1791569353.01,
+  "rack_arrive": 1791569358.93,
+  "rack_leave": 1791569379.1,
+  "nest_in": 1791569380.84,
+  "nest_out": 1791569381.88,
+  "place_chute": 1791569382.23,
+  "reach_holder": 1791569382.91,
+  "end": 1791569383.95,
+  "note": "ABNORMAL: after pick A stands facing camera at m/c (13.7-16.8); 20 s at rack with hands in the LOWER bins"
+ },
+ {
+  "start": 1791569383.95,
+  "rack_arrive": 1791569388.13,
+  "rack_leave": 1791569399.02,
+  "nest_in": 1791569401.09,
+  "nest_out": 1791569402.13,
+  "place_chute": 1791569402.83,
+  "reach_holder": 1791569403.53,
+  "end": 1791569404.22,
+  "note": "ABNORMAL: rack 10.9 s"
+ },
+ {
+  "start": 1791569404.22,
+  "rack_arrive": 1791569406.64,
+  "rack_leave": 1791569412.55,
+  "nest_in": 1791569413.94,
+  "nest_out": 1791569414.99,
+  "place_chute": 1791569416.01,
+  "reach_holder": 1791569416.7,
+  "end": 1791569417.05,
+  "note": "after pick A turns toward camera ~1.4 s; rack 5.9 s"
+ }
+]

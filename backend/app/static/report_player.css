@@ -1,0 +1,23 @@
+/* Player controls under the report video (colours come from the report page: --panel, --edge, --ink, --ink2) */
+.rp{margin-top:8px;user-select:none}
+.rp-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.rp button{background:var(--panel,#fff);color:var(--ink,#111);border:1px solid var(--edge,#ccc);border-radius:6px;padding:4px 9px;font:inherit;cursor:pointer;min-width:34px}
+.rp button:hover{border-color:#3b82f6}
+.rp button.on{background:#2563eb;border-color:#2563eb;color:#fff}
+.rp .rp-play{min-width:44px;font-weight:700}
+.rp-sp{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-left:8px;color:var(--ink2,#555);font-size:12px}
+.rp-sp button{padding:3px 7px;min-width:0;font-size:12px}
+.rp-now{margin:8px 0 6px;font-size:13px;color:var(--ink2,#555);min-height:18px;font-variant-numeric:tabular-nums}
+.rp-now b{color:var(--ink,#111)}
+.rp-dot{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+.rp-track{position:relative;border-radius:6px;background:var(--edge,#ddd);cursor:ew-resize;touch-action:none;overflow:visible}
+.rp-all{height:26px}
+.rp-zoom{height:40px}
+.rp-segs{position:absolute;inset:0;border-radius:6px;overflow:hidden}
+.rp-segs i{position:absolute;top:0;bottom:0}
+.rp-segs b{position:absolute;top:0;bottom:0;border-left:2px solid #fff;color:#fff;font:600 10px/1 system-ui,sans-serif;padding:2px 0 0 3px;text-shadow:0 0 2px #000}
+.rp-segs b.bad{border-left-color:#ef4444}
+.rp-head{position:absolute;top:-4px;bottom:-4px;width:3px;margin-left:-1px;background:#fff;box-shadow:0 0 0 1px #000,0 0 6px rgba(0,0,0,.6);pointer-events:none;border-radius:2px}
+.rp-tip{display:none;position:absolute;bottom:calc(100% + 6px);transform:translateX(-50%);background:#111;color:#fff;font-size:11px;padding:3px 6px;border-radius:4px;white-space:nowrap;pointer-events:none;z-index:2}
+.rp-zl{margin:10px 0 4px;font-size:12px;color:var(--ink2,#555)}
+.rp-help{margin-top:8px;font-size:12px;color:var(--ink2,#555)}

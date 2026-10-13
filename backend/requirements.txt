@@ -1,0 +1,14 @@
+# Core (required)
+fastapi>=0.115,<1.0
+uvicorn[standard]>=0.30
+SQLAlchemy>=2.0
+pydantic>=2.6
+numpy>=1.26
+opencv-python>=4.9
+python-multipart>=0.0.9
+
+# Person / hand tracking with YOLO pose (recommended for real cameras).
+# Without it the system falls back to a simpler motion-blob tracker.
+# CPU build:  pip install ultralytics --extra-index-url https://download.pytorch.org/whl/cpu
+# NVIDIA GPU: install the CUDA build of torch first (see https://pytorch.org), then ultralytics, and set LM_POSE_DEVICE=cuda:0
+ultralytics>=8.3
