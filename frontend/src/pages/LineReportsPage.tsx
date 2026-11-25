@@ -1,6 +1,6 @@
-import { useEffect, useMemo, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { Activity, ChevronLeft, ChevronRight, Clock, Lightbulb, User } from 'lucide-react';
+import { Activity, ChevronLeft, ChevronRight, Clock, Lightbulb, Play, User } from 'lucide-react';
 import {
   Bar,
   BarChart,
@@ -19,10 +19,12 @@ import {
   YAxis,
 } from 'recharts';
 import { api } from '../api/client';
-import type { Line as LineT, LineReport, StationReport, VariationReport } from '../api/types';
+import type { ExampleCycle, Line as LineT, LineReport, StationReport, VariationReport } from '../api/types';
 import { AXIS_PROPS, ChartLegend, TooltipBox } from '../components/charts/ChartTooltip';
 import { EmptyState, ErrorState, SkeletonPanel } from '../components/EmptyState';
+import { ElementDetail, FlowStrip, LinePlayer, LossList, Spread, TimeBars, watchOf, type WatchTarget } from '../components/LineBreakdown';
 import { Panel } from '../components/Panel';
+import { WindowPlayer } from '../components/WindowPlayer';
 import { usePageTitle } from '../context/PageTitleContext';
 import { usePolling } from '../hooks/usePolling';
 import { fmtNum, fmtSec } from '../lib/format';
@@ -259,6 +261,7 @@ function LineView({ line, from, to, query }: ViewProps) {
         <Kpi label="Operator work time" value={`${k.work_pct ?? '—'}%`} tone="text-emerald-400" sub={`Work ${k.work_h ?? 0} h`} visual={<User className="size-6 text-sky-400" />} />
         <Kpi label="Waiting / unattended" value={`${k.wait_pct ?? '—'}%`} tone="text-amber-400" sub={`${k.wait_h ?? 0} h`} visual={<Clock className="size-6 text-amber-400" />} />
       </div>
+      <LineVisual line={line} from={from} to={to} query={query} />
       <div className="grid gap-4 xl:grid-cols-3">
         <Panel title="Cycle time trend (all steps)" subtitle={`Median cycle of all steps per ${d.trend_bucket_sec / 60} min · red = 15% or more of the cycles in it abnormal`} className="xl:col-span-2">
           <TrendChart d={d} />
@@ -410,10 +413,19 @@ function StepView({ line, from, to, query }: ViewProps) {
     if (!id && first) navigate(`/reports/step/${first.id}${query ?? ''}`, { replace: true });
   }, [id, first, navigate, query]);
   const r = usePolling(() => (id ? api.stationReport(id, from, to || undefined) : Promise.resolve(null)), [id, from, to], to ? 0 : 60_000);
+  const [win, setWin] = useState<{ at: number | null; sec: number }>({ at: null, sec: 60 });
+  const player = useRef<HTMLDivElement>(null);
+  useEffect(() => setWin({ at: null, sec: 60 }), [id]);
   const d = r.data;
   if (!d) return <Loading error={r.error} retry={r.reload} />;
   const k = d.kpis;
   const go = (sid: number | null) => sid && navigate(`/reports/step/${sid}${query ?? ''}`);
+  const watchAt = (start: number) => {
+    setWin((w) => ({ at: start - 3, sec: w.sec }));
+    player.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const colorOf = Object.fromEntries((d.elements ?? []).map((e) => [e.code, e]));
+  const checked = (d.elements ?? []).length > 0;
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -450,6 +462,12 @@ function StepView({ line, from, to, query }: ViewProps) {
         <Kpi label="Operator work time" value={`${k.work_pct ?? '—'}%`} tone="text-emerald-400" sub={`${k.work_h} h`} />
         <Kpi label="Waiting / unattended" value={`${k.wait_pct ?? '—'}%`} tone="text-amber-400" sub={`${k.wait_h} h`} />
       </div>
+      {checked && <StepVisual line={line} stationId={d.station.id} from={from} to={to} onWatch={(ex) => watchAt(ex.start)} />}
+      {checked && (
+        <div ref={player} className="scroll-mt-4">
+          <WindowPlayer stationId={d.station.id} at={win.at} sec={win.sec} onWindow={(at, sec) => setWin({ at, sec })} />
+        </div>
+      )}
       <div className="grid gap-4 xl:grid-cols-2">
         <Panel title="Cycle time distribution" subtitle={`Normal cycle ${fmtSec(k.normal_cycle)}`}>
           <div style={{ height: 250 }}>
@@ -471,13 +489,13 @@ function StepView({ line, from, to, query }: ViewProps) {
         </Panel>
       </div>
       <div className="grid gap-4 xl:grid-cols-3">
-        <Panel title="Recent cycle records" flush className="xl:col-span-2">
-          <div className="max-h-[22rem] overflow-y-auto">
+        <Panel title="Recent cycle records" subtitle={checked ? 'Newest first · the bar shows the elements of each cycle · ▶ plays it' : 'Newest first'} flush className="xl:col-span-2">
+          <div className="max-h-[26rem] overflow-y-auto">
             <table className="w-full text-sm tabular-nums">
-              <thead className="sticky top-0 bg-panel">
+              <thead className="sticky top-0 z-10 bg-panel">
                 <tr className="border-b border-edge text-left text-xs text-ink-3">
-                  {['Cycle no.', 'Start time', 'Cycle time (s)', 'Status', 'Operator', 'Remarks'].map((h) => (
-                    <th key={h} className="px-3 py-2 font-medium">
+                  {['Cycle no.', 'Start time', 'Cycle time (s)', ...(checked ? ['Elements', ''] : []), 'Status', 'Remarks'].map((h, i) => (
+                    <th key={i} className="px-3 py-2 font-medium">
                       {h}
                     </th>
                   ))}
@@ -485,16 +503,27 @@ function StepView({ line, from, to, query }: ViewProps) {
               </thead>
               <tbody>
                 {d.recent.map((c) => (
-                  <tr key={c.n} className="border-b border-edge/60">
+                  <tr key={c.id} className="border-b border-edge/60">
                     <td className="px-3 py-1.5 text-ink-3">{c.n}</td>
                     <td className="px-3 py-1.5">{c.start.replace('T', ' ')}</td>
                     <td className={`px-3 py-1.5 ${c.status === 'Abnormal' ? 'text-red-300' : ''}`}>{c.cycle}</td>
+                    {checked && (
+                      <>
+                        <td className="px-3 py-1.5">
+                          <MiniBar segs={c.segs ?? []} cycle={c.cycle} normal={k.normal_cycle} meta={colorOf} />
+                        </td>
+                        <td className="px-1 py-1">
+                          <button type="button" className="btn btn-sm px-2" onClick={() => watchAt(c.t0)} title="Watch this cycle (recordings are kept 12 h)" aria-label="Watch this cycle">
+                            <Play className="size-3.5" />
+                          </button>
+                        </td>
+                      </>
+                    )}
                     <td className="px-3 py-1.5">
                       <span className={`rounded px-2 py-0.5 text-xs font-semibold ${c.status === 'Abnormal' ? 'bg-red-600/80 text-white' : 'bg-emerald-600/80 text-white'}`}>
                         {c.status}
                       </span>
                     </td>
-                    <td className="px-3 py-1.5 text-ink-3">{c.operator}</td>
                     <td className="px-3 py-1.5 text-ink-3">{c.remark || '—'}</td>
                   </tr>
                 ))}
@@ -530,6 +559,115 @@ function StepView({ line, from, to, query }: ViewProps) {
         </Panel>
       </div>
     </>
+  );
+}
+
+/** the visual part of the line report: flow, where the time goes, the video, variation and losses */
+function LineVisual({ line, from, to, query }: ViewProps) {
+  const navigate = useNavigate();
+  const r = usePolling(() => api.lineBreakdown(line.id, from, to || undefined), [line.id, from, to], to ? 0 : 60_000);
+  const [sel, setSel] = useState<{ sid: number; code: string } | null>(null);
+  const [target, setTarget] = useState<WatchTarget | null>(null);
+  const player = useRef<HTMLDivElement>(null);
+  const d = r.data;
+  if (!d) return r.error ? <ErrorState error={r.error} onRetry={r.reload} /> : <SkeletonPanel className="h-40" />;
+  const watch = (ex: ExampleCycle, label: string) => {
+    setTarget(watchOf(ex, label));
+    player.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+  const checked = d.steps.some((s) => s.checked);
+  const selStep = sel ? d.steps.find((s) => s.station_id === sel.sid) : undefined;
+  const selEl = selStep?.elements.find((e) => e.code === sel?.code);
+  return (
+    <>
+      <Panel
+        title="Line flow"
+        subtitle={`Steps in order · time per part = average of the normal cycles${d.bottleneck ? ' · red = the slowest step (bottleneck)' : ''} · click a step for its detail`}
+      >
+        <FlowStrip steps={d.steps} bottleneck={d.bottleneck} takt={d.line.takt_time_sec} onOpen={(id) => navigate(`/reports/step/${id}${query ?? ''}`)} />
+      </Panel>
+      {checked && (
+        <>
+          <Panel title="Where the time goes" subtitle="Average seconds per part, split into what the operator does · click an element for its trend and a video">
+            <TimeBars
+              steps={d.steps}
+              takt={d.line.takt_time_sec}
+              selected={sel}
+              onSelect={(sid, code) => setSel(sel?.sid === sid && sel.code === code ? null : { sid, code })}
+            />
+            {selStep && selEl && <ElementDetail step={selStep} el={selEl} onWatch={watch} onClose={() => setSel(null)} />}
+          </Panel>
+          <div ref={player} className="scroll-mt-4">
+            <LinePlayer lineId={line.id} target={target} onTarget={setTarget} quick={d.steps} />
+          </div>
+          <div className="grid gap-4 xl:grid-cols-2">
+            <Panel title="Variation (baratsuki) per element" subtitle="Which part of the work varies most">
+              <Spread steps={d.steps} onWatch={watch} />
+            </Panel>
+            <Panel title="Biggest losses" subtitle="Time lost beyond the usual, with an example to watch">
+              <LossList losses={d.losses} onWatch={watch} />
+            </Panel>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
+/** one step: where its time goes, the spread of its elements and its losses */
+function StepVisual({ line, stationId, from, to, onWatch }: { line: LineT; stationId: number; from: string; to: string; onWatch: (ex: ExampleCycle) => void }) {
+  const r = usePolling(() => api.lineBreakdown(line.id, from, to || undefined, stationId), [line.id, stationId, from, to], to ? 0 : 60_000);
+  const [sel, setSel] = useState<string | null>(null);
+  const d = r.data;
+  if (!d) return r.error ? <ErrorState error={r.error} onRetry={r.reload} /> : <SkeletonPanel className="h-40" />;
+  const s = d.steps[0];
+  if (!s?.checked) return null;
+  const el = s.elements.find((e) => e.code === sel);
+  return (
+    <>
+      <Panel title="Where the time goes" subtitle="Average seconds per part, split into what the operator does · click an element for its trend and a video">
+        <TimeBars steps={[s]} takt={d.line.takt_time_sec} selected={sel ? { sid: s.station_id, code: sel } : null} onSelect={(_, code) => setSel(sel === code ? null : code)} />
+        {el && <ElementDetail step={s} el={el} onWatch={(ex) => onWatch(ex)} onClose={() => setSel(null)} />}
+      </Panel>
+      <div className="grid gap-4 xl:grid-cols-2">
+        <Panel title="Variation (baratsuki) per element" subtitle="Which part of the work varies most">
+          <Spread steps={[s]} onWatch={(ex) => onWatch(ex)} />
+        </Panel>
+        <Panel title="Biggest losses" subtitle="Time lost beyond the usual, with an example to watch">
+          <LossList losses={d.losses} onWatch={(ex) => onWatch(ex)} />
+        </Panel>
+      </div>
+    </>
+  );
+}
+
+/** the elements of one cycle as a small bar; a longer cycle gets a longer bar */
+function MiniBar({
+  segs,
+  cycle,
+  normal,
+  meta,
+}: {
+  segs: [string, number, number][];
+  cycle: number | null;
+  normal: number | null;
+  meta: Record<string, { label: string; color: string }>;
+}) {
+  if (!segs.length || !cycle) return <span className="text-xs text-ink-3">—</span>;
+  const width = Math.min(100, (100 * cycle) / (2 * (normal || cycle)));
+  return (
+    <div className="h-3 w-40">
+      <div className="relative h-full overflow-hidden rounded-sm bg-white/[0.06]" style={{ width: `${width}%` }}>
+        {segs.map(([code, a, dur], i) => (
+          <span
+            key={i}
+            className="absolute inset-y-0 border-r border-black/40"
+            style={{ left: `${(100 * a) / cycle}%`, width: `${(100 * dur) / cycle}%`, background: meta[code]?.color ?? '#64748b' }}
+            title={`${meta[code]?.label ?? code}: ${dur.toFixed(1)} s`}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 

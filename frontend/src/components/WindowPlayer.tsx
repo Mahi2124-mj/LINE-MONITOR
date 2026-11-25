@@ -7,18 +7,18 @@ import { Segmented } from './RangeSelector';
 import { ErrorState, SkeletonPanel } from './EmptyState';
 import { Panel } from './Panel';
 
-const SPEEDS = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 4];
+export const SPEEDS = [0.1, 0.25, 0.5, 0.75, 1, 1.5, 2, 4];
 export const WINDOW_LENGTHS = [60, 72]; // seconds: 1 min, 1.2 min
 
 type Cycle = MachineWindow['cycles'][number];
-interface Seg {
+export interface Seg {
   code: string;
   a: number;
   b: number;
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
-const clock = (unix: number, tenths = true) => {
+export const clock = (unix: number, tenths = true) => {
   const d = new Date(unix * 1000);
   return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${tenths ? `.${Math.floor(d.getMilliseconds() / 100)}` : ''}`;
 };
@@ -321,7 +321,7 @@ function Player({ w, stationId }: { w: MachineWindow; stationId: number }) {
 
 /** a timeline from a to b (video seconds): the elements in colour, a white tick and number where a cycle starts, the
  * position line; click or drag to seek */
-function Track({
+export function Track({
   a,
   b,
   segs,

@@ -6,12 +6,15 @@ normal cycle (its median), the same rule the breakup reports use; a line stop in
 Operator work = work + walking of the operator in the cycle; waiting = waiting for a part or another person."""
 from __future__ import annotations
 
+import asyncio
 import json
 import statistics as stat
+import time
 from datetime import datetime, timedelta
 
 import numpy as np
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi.responses import FileResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -165,9 +168,16 @@ def station_report(station_id: int, start: datetime | None = Query(None), end: d
             hist.append({"label": f"{a:.0f}-{b:.0f}" if not last else f"{a:.0f}+", "count": n})
     seq = [{"n": k + 1, "t": c.ended_at.isoformat(timespec="seconds"), "cycle": _r(c.cycle_sec), "abnormal": f}
            for k, (c, f) in enumerate(zip(cyc, st["flags"]))][-MAX_POINTS:]
-    recent = [{"n": k + 1, "start": c.started_at.isoformat(timespec="seconds"), "cycle": _r(c.cycle_sec),
-               "status": "Abnormal" if f else "Normal", "operator": s.operator_name or "-", "remark": _remark(c, med)}
-              for k, (c, f) in enumerate(zip(cyc, st["flags"]))][-25:][::-1]
+    from ..services.detector_feed import element_meta
+    from .machine_analysis import _sequence
+
+    key = next((c.elements.get("key") for c in reversed(cyc) if c.elements), None)
+    names = element_meta().get(key, {}) if key else {}
+    recent = [{"n": k + 1, "id": c.id, "start": c.started_at.isoformat(timespec="seconds"), "t0": round(c.started_at.timestamp(), 2),
+               "cycle": _r(c.cycle_sec), "status": "Abnormal" if f else "Normal", "operator": s.operator_name or "-", "remark": _remark(c, med),
+               "segs": [[e["code"], _r(e["start"], 2), _r(e["dur"], 2)] for e in _sequence(c, names)] if c.elements else []}
+              for k, (c, f) in enumerate(zip(cyc, st["flags"]))][-60:][::-1]
+    el_meta = [dict(zip(("code", "label", "kind", "color"), (code, *_el_info(names, code)))) for code in names]
     snap = None
     for k in range(len(cyc) - 1, -1, -1):
         if st["flags"][k] and cyc[k].camera_id is not None:
@@ -181,7 +191,7 @@ def station_report(station_id: int, start: datetime | None = Query(None), end: d
         "prev_id": ids[i - 1] if i > 0 else None, "next_id": ids[i + 1] if i + 1 < len(ids) else None,
         "window": [start.isoformat(timespec="seconds"), end.isoformat(timespec="seconds")],
         "kpis": {k: v for k, v in st.items() if k != "flags"},
-        "histogram": hist, "sequence": seq, "recent": recent, "snapshot": snap,
+        "histogram": hist, "sequence": seq, "recent": recent, "snapshot": snap, "elements": el_meta,
     }
 
 
@@ -375,3 +385,205 @@ def movement_report(line_id: int, start: datetime | None = Query(None), end: dat
     timed = [o for o in out if o["per_part"]]
     totals = {kk: _r(sum(o["per_part"][kk] for o in timed), 1) for kk in ("work", "walk", "wait", "machine")} if timed else None
     return {"window": [start.isoformat(timespec="seconds"), end.isoformat(timespec="seconds")], "operators": out, "totals_per_part": totals}
+
+
+# ------------------------------------------------------------------ element breakup per step (the visual line report)
+VIDEO_SEC = 12 * 3600 - 900   # recordings are kept 12 h: example cycles come from the part still recorded
+SLOW_ABS, SLOW_REL = 1.0, 0.5  # an element is clearly slower than usual: 1 s and 50 % over its median
+
+
+def _step_jobs() -> tuple[dict[int, int], dict[int, str]]:
+    """station id -> camera its detector reads, station id -> detector key"""
+    from ..services.detector_feed import _jobs
+
+    cam, key = {}, {}
+    for k, v in _jobs().items():
+        for sid in v["stations"]:
+            cam[sid], key[sid] = v["cams"][0], k
+    return cam, key
+
+
+def _el_info(names: dict, code: str) -> tuple[str, str, str]:
+    row = list(names.get(code) or [code, "work"])
+    return row[0], row[1], row[2] if len(row) > 2 else "#94a3b8"
+
+
+def _example(cands: list[tuple[float, models.Cycle]], cam: int | None) -> dict | None:
+    """the cycle with the highest score, from the part of the window still recorded if there is one"""
+    if not cands:
+        return None
+    fresh = [x for x in cands if x[1].started_at.timestamp() >= time.time() - VIDEO_SEC]
+    _, c = max(fresh or cands, key=lambda x: x[0])
+    return {"cycle_id": c.id, "station_id": c.station_id, "camera_id": c.camera_id or cam, "start": round(c.started_at.timestamp(), 2),
+            "end": round(c.ended_at.timestamp(), 2), "sec": _r(c.cycle_sec), "at": c.started_at.isoformat(timespec="seconds"),
+            "video": bool(fresh)}
+
+
+@router.get("/{line_id}/breakdown")
+def breakdown_report(line_id: int, start: datetime | None = Query(None), end: datetime | None = Query(None),
+                     station_id: int | None = Query(None), db: Session = Depends(get_db)):
+    """Per step, from the element times of its checked detector: where the time goes (average per cycle), the spread
+    of each element, its trend through the window, the biggest losses with an example cycle each, and a typical and
+    the slowest cycle to watch. Steps without a detector get their cycle time only."""
+    from ..services.detector_feed import element_meta
+
+    line = db.get(models.Line, line_id)
+    if line is None:
+        raise HTTPException(404, "line not found")
+    start, end = _window(start, end)
+    all_sts = _stations(db, line_id)
+    sts = [s for s in all_sts if station_id is None or s.id == station_id]
+    cyc = _cycles(db, [s.id for s in sts], start, end)
+    meta = element_meta()
+    cam_of, key_of = _step_jobs()
+    span = (end - start).total_seconds()
+    bucket = 300 if span <= 12 * 3600 else 900 if span <= 3 * 86400 else 3600
+    copies: dict[str, int] = {}
+    for s in all_sts:
+        if s.parallel_group:
+            copies[s.parallel_group] = copies.get(s.parallel_group, 0) + 1
+    steps, losses = [], []
+    for s in sts:
+        allc = cyc[s.id]
+        k = copies.get(s.parallel_group, 1) if s.parallel_group else 1
+        med_all = stat.median(c.cycle_sec for c in allc) if allc else None
+        row = {"station_id": s.id, "sequence": s.sequence, "name": s.name, "operator": s.operator_name, "camera_id": cam_of.get(s.id),
+               "cycles": len(allc), "normal_cycle": _r(med_all), "per_part": _r(med_all / k) if med_all else None,
+               "pace_per_hour": round(3600 * k / med_all) if med_all else None, "copies": k, "checked": False,
+               "avg_normal": None, "elements": [], "trend": [], "typical": None, "slowest": None}
+        steps.append(row)
+        rows = [c for c in allc if c.source == "detector" and c.elements and c.elements.get("el")]
+        if not rows:
+            continue
+        names = meta.get(rows[0].elements.get("key") or key_of.get(s.id), {})
+        cam = cam_of.get(s.id)
+        step = f"{s.sequence}. {s.name}"
+        med = stat.median(c.cycle_sec for c in rows)
+        stop_at = max(STOP_MIN, 3 * med)
+        normal = [c for c in rows if c.cycle_sec <= ABNORMAL * med] or rows
+        vals: dict[str, list[tuple[float, models.Cycle]]] = {}
+        for c in normal:
+            for code, v in c.elements["el"].items():
+                vals.setdefault(code, []).append((v, c))
+        presence = {code: len(v) / len(normal) for code, v in vals.items()}
+        elements = []
+        for code in list(names) + sorted(set(vals) - set(names)):
+            if code not in vals:
+                continue
+            label, kind, color = _el_info(names, code)
+            v = [x for x, _ in vals[code]]
+            p10, q1, p50, q3, p90 = (float(x) for x in np.percentile(v, [10, 25, 50, 75, 90]))
+            slow = [(x, c) for x, c in vals[code] if x > p50 + max(SLOW_ABS, SLOW_REL * p50)]
+            over = sum(x - p50 for x, _ in slow)
+            elements.append({"code": code, "label": label, "kind": kind, "color": color, "avg": _r(sum(v) / len(normal), 2),
+                             "median": _r(p50, 2), "p10": _r(p10, 2), "q1": _r(q1, 2), "q3": _r(q3, 2), "p90": _r(p90, 2),
+                             "max": _r(max(v), 2), "presence_pct": _r(100 * presence[code]), "slow_cycles": len(slow),
+                             "over_min": _r(over / 60, 1), "slowest": _example(vals[code], cam)})
+            if over >= 30 and slow:
+                losses.append({"station_id": s.id, "step": step, "kind": "wait" if kind == "wait" else "element", "code": code,
+                               "color": color, "minutes": _r(over / 60, 1), "count": len(slow),
+                               "title": f"{label}: longer than its usual {p50:.1f} s in {len(slow)} cycles",
+                               "example": _example(slow, cam)})
+        longc = [c for c in rows if ABNORMAL * med < c.cycle_sec < stop_at]
+        stops = [c for c in rows if c.cycle_sec >= stop_at]
+        if longc:
+            losses.append({"station_id": s.id, "step": step, "kind": "long", "code": None, "color": "#f59e0b",
+                           "minutes": _r(sum(c.cycle_sec - med for c in longc) / 60, 1), "count": len(longc),
+                           "title": f"{len(longc)} long cycles ({ABNORMAL:.1f} to 3 x the normal {med:.1f} s)",
+                           "example": _example([(c.cycle_sec, c) for c in longc], cam)})
+        if stops:
+            losses.append({"station_id": s.id, "step": step, "kind": "stop", "code": None, "color": "#ef4444",
+                           "minutes": _r(sum(c.cycle_sec - med for c in stops) / 60, 1), "count": len(stops),
+                           "title": f"{len(stops)} stops inside a cycle (longest {max(c.cycle_sec for c in stops) / 60:.1f} min)",
+                           "example": _example([(c.cycle_sec, c) for c in stops], cam)})
+        # a typical cycle: closest to the normal cycle with every usual element (the newest of equal ones)
+        usual = {code for code, p in presence.items() if p >= 0.9}
+        typical = [(-round(abs(c.cycle_sec - med), 1) + c.started_at.timestamp() * 1e-12, c) for c in normal if usual <= set(c.elements["el"])]
+        slowest = [(c.cycle_sec, c) for c in rows if c.cycle_sec < stop_at]
+        # the trend: per time block the median cycle and the median of each element
+        by_b: dict[int, list[models.Cycle]] = {}
+        for c in normal:
+            by_b.setdefault(int(c.ended_at.timestamp() // bucket * bucket), []).append(c)
+        trend = []
+        for b, cs in sorted(by_b.items()):
+            el: dict[str, float] = {}
+            ea: dict[str, float] = {}  # average per cycle (0 where not done): shows a bin change every few parts
+            for code in vals:
+                xs = [c.elements["el"][code] for c in cs if code in c.elements["el"]]
+                if xs:
+                    el[code] = round(stat.median(xs), 2)
+                    ea[code] = round(sum(xs) / len(cs), 2)
+            trend.append({"t": datetime.fromtimestamp(b).isoformat(timespec="seconds"), "n": len(cs),
+                          "cycle": _r(stat.median(c.cycle_sec for c in cs)), "el": el, "ea": ea})
+        # pace and bottleneck from the average of the normal cycles: a bin change every few parts slows the step down
+        # although its median does not show it
+        avg_normal = stat.mean(c.cycle_sec for c in normal)
+        row.update({"checked": True, "normal_cycle": _r(med), "per_part": _r(avg_normal / k), "pace_per_hour": round(3600 * k / avg_normal),
+                    "avg_normal": _r(avg_normal), "elements": elements, "trend": trend,
+                    "typical": _example(typical, cam), "slowest": _example(slowest, cam)})
+    timed = [x for x in steps if x["per_part"]]
+    bottleneck = max(timed, key=lambda x: x["per_part"])["station_id"] if len(timed) >= 2 else None
+    losses.sort(key=lambda x: -(x["minutes"] or 0))
+    return {"line": {"id": line.id, "name": line.name, "takt_time_sec": line.takt_time_sec},
+            "window": [start.isoformat(timespec="seconds"), end.isoformat(timespec="seconds")], "bucket_sec": bucket,
+            "bottleneck": bottleneck, "steps": steps, "losses": losses[:10]}
+
+
+# ------------------------------------------------------------------ one camera of the line in one video, a lane per step on it
+def _line_cams(db: Session, line_id: int) -> tuple[list[models.Station], dict[int, int], list[int]]:
+    sts = _stations(db, line_id)
+    cam_of, _ = _step_jobs()
+    cams: list[int] = []
+    for s in sts:
+        if s.id in cam_of and cam_of[s.id] not in cams:
+            cams.append(cam_of[s.id])
+    return sts, cam_of, cams
+
+
+@router.get("/{line_id}/window")
+def line_window(line_id: int, camera_id: int | None = Query(None), start: float | None = Query(None), sec: float = Query(60.0),
+                db: Session = Depends(get_db)):
+    """One window of one camera (default: the newest one) with every checked step on it as a lane of its cycles and
+    elements, for the line video. start = unix time."""
+    from ..services.clips import OUT_FPS
+    from .machine_analysis import WINDOW_SEC, _window_cycles
+
+    if db.get(models.Line, line_id) is None:
+        raise HTTPException(404, "line not found")
+    sts, cam_of, cams = _line_cams(db, line_id)
+    if not cams:
+        raise HTTPException(404, "no step of this line has a checked detector")
+    cam = camera_id if camera_id in cams else cams[0]
+    lane_sts = [s for s in sts if cam_of.get(s.id) == cam]
+    sec = min(max(sec, WINDOW_SEC[0]), WINDOW_SEC[1])
+    newest = db.scalar(select(models.Cycle.ended_at).where(models.Cycle.station_id.in_([s.id for s in lane_sts]),
+                                                          models.Cycle.source == "detector")
+                       .order_by(models.Cycle.ended_at.desc()).limit(1))
+    latest = (newest.timestamp() if newest else time.time() - 300) - sec
+    t0 = latest if start is None else start
+    lanes = []
+    for s in lane_sts:
+        cycles, names, _ = _window_cycles(db, s, t0, sec)
+        used = {g[0] for c in cycles for g in c["segs"]}
+        lanes.append({"station_id": s.id, "sequence": s.sequence, "name": s.name, "cycles": cycles,
+                      "elements": [dict(zip(("code", "label", "kind", "color"), (code, *_el_info(names, code))))
+                                   for code in list(names) + sorted(used - set(names))]})
+    return {"camera_id": cam, "t0": t0, "start": datetime.fromtimestamp(t0).isoformat(timespec="seconds"), "sec": sec, "fps": OUT_FPS,
+            "latest_t0": latest, "lanes": lanes,
+            "cameras": [{"camera_id": c, "steps": [f"{s.sequence}. {s.name}" for s in sts if cam_of.get(s.id) == c]} for c in cams]}
+
+
+@router.get("/{line_id}/window.webm")
+async def line_window_video(line_id: int, camera_id: int = Query(...), start: float = Query(...), sec: float = Query(60.0),
+                            db: Session = Depends(get_db)):
+    from ..services.clips import cycle_clip
+    from .machine_analysis import WINDOW_SEC
+
+    _, _, cams = _line_cams(db, line_id)
+    if camera_id not in cams:
+        raise HTTPException(404, "not a camera of this line")
+    sec = min(max(sec, WINDOW_SEC[0]), WINDOW_SEC[1])
+    path = await asyncio.to_thread(cycle_clip, camera_id, start, start + sec, None, "plain")
+    if path is None:
+        raise HTTPException(410, "The recording of this time is no longer available (recordings are kept 12 h).")
+    return FileResponse(path, media_type="video/webm", headers={"Cache-Control": "max-age=3600"})

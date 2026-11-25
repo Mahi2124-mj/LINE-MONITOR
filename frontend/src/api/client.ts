@@ -37,6 +37,8 @@ import type {
   MachineAnalysis,
   MachineCycleDetail,
   MachineWindow,
+  LineBreakdown,
+  LineWindow,
   ShiftMovementReport,
   ShiftMovementRow,
   ShiftMovementStatus,
@@ -155,6 +157,15 @@ export const api = {
   setMachineMaster: (cycleId: number) => request<{ ok: boolean }>('POST', `/api/machine-analysis/cycle/${cycleId}/master`),
   clearMachineMaster: (stationId: number) => request<{ ok: boolean }>('DELETE', `/api/machine-analysis/station/${stationId}/master`),
   recordedFrameUrl: (cameraId: number, t: number) => `/api/line-report/frame/${cameraId}.jpg?t=${t}`,
+  lineBreakdown: (lineId: number, start: string, end?: string, stationId?: number) =>
+    request<LineBreakdown>('GET', `/api/line-report/${lineId}/breakdown${qs({ start, end, station_id: stationId })}`),
+  lineWindow: (lineId: number, cameraId: number | null, start: number | null, sec: number) =>
+    request<LineWindow>(
+      'GET',
+      `/api/line-report/${lineId}/window?sec=${sec}${cameraId !== null ? `&camera_id=${cameraId}` : ''}${start !== null ? `&start=${start.toFixed(1)}` : ''}`,
+    ),
+  lineWindowClipUrl: (lineId: number, cameraId: number, start: number, sec: number) =>
+    `/api/line-report/${lineId}/window.webm?camera_id=${cameraId}&start=${start.toFixed(1)}&sec=${sec}`,
 
   // Alerts
   // filter = one card of the Alerts page: a severity (without bottleneck alerts) or the bottleneck alerts

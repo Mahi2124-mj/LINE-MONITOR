@@ -32,6 +32,9 @@ KINDS = {
     "yml": {"FETCH": "motion"},
     "ymm": {"BACK": "motion", "WAIT": "wait"},
     "yfi": {"AFTER": "motion", "WAIT": "wait", "MACHINE": "machine"},
+    # YWD SS line (camera 22): back at the front tray beyond the turn = waiting for the next taped rail
+    "yjc": {"BACK": "wait"},
+    "ytp": {},
 }
 
 _frames: dict = {}

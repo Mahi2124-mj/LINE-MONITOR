@@ -621,8 +621,19 @@ export interface StationReport {
   kpis: Omit<StepSummary, 'station_id' | 'sequence' | 'name' | 'operator'>;
   histogram: { label: string; count: number }[];
   sequence: { n: number; t: string; cycle: number | null; abnormal: boolean }[];
-  recent: { n: number; start: string; cycle: number | null; status: 'Normal' | 'Abnormal'; operator: string; remark: string }[];
+  recent: {
+    n: number;
+    id: number;
+    start: string;
+    t0: number;
+    cycle: number | null;
+    status: 'Normal' | 'Abnormal';
+    operator: string;
+    remark: string;
+    segs: [string, number, number][]; // element, start in the cycle, duration (s)
+  }[];
   snapshot: { n: number; t: string; cycle: number | null; camera_id: number; frame_ts: number; remark: string } | null;
+  elements: { code: string; label: string; kind: ElementKind; color: string }[];
 }
 export interface OperatorsReport {
   window: [string, string];
@@ -806,4 +817,86 @@ export interface ShiftMovementReport {
   suggestions: string[];
   notes: string[];
   seconds: number;
+}
+
+/* ------------------------------------------------------------------ visual line report (element breakup per step) */
+export interface ExampleCycle {
+  cycle_id: number;
+  station_id: number;
+  camera_id: number | null;
+  start: number; // unix s
+  end: number;
+  sec: number | null;
+  at: string;
+  video: boolean; // still in the recording (kept 12 h)
+}
+export interface BreakdownElement {
+  code: string;
+  label: string;
+  kind: ElementKind;
+  color: string;
+  avg: number; // seconds per normal cycle (0 where it was not done)
+  median: number;
+  p10: number;
+  q1: number;
+  q3: number;
+  p90: number;
+  max: number;
+  presence_pct: number;
+  slow_cycles: number;
+  over_min: number;
+  slowest: ExampleCycle | null;
+}
+export interface BreakdownStep {
+  station_id: number;
+  sequence: number;
+  name: string;
+  operator: string;
+  camera_id: number | null;
+  cycles: number;
+  normal_cycle: number | null;
+  per_part: number | null;
+  pace_per_hour: number | null;
+  copies: number;
+  checked: boolean;
+  avg_normal: number | null;
+  elements: BreakdownElement[];
+  trend: { t: string; n: number; cycle: number | null; el: Record<string, number>; ea: Record<string, number> }[];
+  typical: ExampleCycle | null;
+  slowest: ExampleCycle | null;
+}
+export interface BreakdownLoss {
+  station_id: number;
+  step: string;
+  kind: 'element' | 'wait' | 'long' | 'stop';
+  code: string | null;
+  color: string;
+  minutes: number;
+  count: number;
+  title: string;
+  example: ExampleCycle | null;
+}
+export interface LineBreakdown {
+  line: { id: number; name: string; takt_time_sec: number };
+  window: [string, string];
+  bucket_sec: number;
+  bottleneck: number | null;
+  steps: BreakdownStep[];
+  losses: BreakdownLoss[];
+}
+export interface LineWindow {
+  camera_id: number;
+  t0: number;
+  start: string;
+  sec: number;
+  fps: number;
+  latest_t0: number;
+  lanes: {
+    station_id: number;
+    sequence: number;
+    name: string;
+    elements: { code: string; label: string; kind: ElementKind; color: string }[];
+    cycles: MachineWindow['cycles'];
+  }[];
+  cameras: { camera_id: number; steps: string[] }[];
 }

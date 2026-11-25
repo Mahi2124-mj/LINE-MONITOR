@@ -30,7 +30,7 @@ from ..hub import live
 
 log = logging.getLogger(__name__)
 
-FEED_KEYS = ("yur", "yhs", "yxl", "yg1", "yg2", "ylr", "ysr", "ysf", "yml", "ymm", "yfi")
+FEED_KEYS = ("yur", "yhs", "yxl", "yg1", "yg2", "ylr", "ysr", "ysf", "yml", "ymm", "yfi", "yjc", "ytp")
 TOOL = BACKEND_DIR / "tools" / "reports" / "detector_feed.py"
 EVERY_SEC = 300      # one run per camera every 5 minutes
 LAG_SEC = 90         # the detectors confirm a cycle only some seconds after it ended
@@ -51,7 +51,9 @@ STOP_SEC = 180       # no cycle for this long = a stoppage alert
 # buffers, so every step makes about the same parts): one weak detector cannot drag a correct one down with it.
 PARTNERS = {"yur": ("yhs", "yxl"), "yhs": ("yur", "yxl"), "yxl": ("yhs", "yur"), "yg1": ("yg2",), "yg2": ("yg1",),
             "ylr": ("ysr", "ysf"), "ysr": ("ylr", "ysf"), "ysf": ("ysr", "ylr"), "yml": ("ymm",), "ymm": ("yml", "yfi"),
-            "yfi": ("ymm", "yml")}
+            "yfi": ("ymm", "yml"),
+            # YWD SS: every taped rail goes to YJC-SS-09 through the front tray
+            "yjc": ("ytp",), "ytp": ("yjc",)}
 PARALLEL_KEYS = {"yg1": 2, "yg2": 2}  # copies of one machine: each makes half the parts
 
 

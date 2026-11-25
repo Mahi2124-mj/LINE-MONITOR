@@ -4329,7 +4329,407 @@ class YSF(YLR):
         return out + self._check_text("Fr cycles", "Rr cycles")
 
 
-STATIONS = {"m1": M1, "m2": M2, "m34": M34, "m5": M5, "ymm": YMM, "yfi": YFI, "yml": YML, "yur": YUR, "yhs": YHS, "yxl": YXL, "yg1": YG1, "yg2": YG2, "ylr": YLR, "ysr": YSR, "ysf": YSF}
+# ======================================================================== YWD SS line (camera 22 = 192.168.31.213)
+# One camera sees both people of the line. Rails flow from right to left: the RIGHT person tapes each rail (ytp) and lays
+# it in the sloped front tray (chute); the LEFT person takes it from there and works it at machine YJC-SS-09 (yjc), then
+# stands it in the blue bin. Watched frame by frame on a 1600x900 capture of 2026-11-25 09:31-10:01
+# (data/validation_recordings/ywd_hd); the 640 recording of the same time is kept in data/validation_recordings_ywd1125.
+def _hsv_share(hsv, box, kind: str) -> float:
+    r = roi(hsv, box)
+    if r.size == 0:
+        return NAN
+    h, s, v = r[..., 0], r[..., 1], r[..., 2]
+    if kind == "blue":        # shirt-sleeve / tool blue
+        m = (h >= 100) & (h <= 125) & (s >= 120) & (v >= 40)
+    elif kind == "toolblue":  # the blue tool of YJC-SS-09
+        m = (h >= 100) & (h <= 130) & (s >= 120) & (v >= 30)
+    elif kind == "skin":
+        m = (h <= 20) & (s >= 50) & (s <= 170) & (v >= 80)
+    else:                     # white glove
+        m = (s <= 45) & (v >= 170)
+    return float(m.mean())
+
+
+def _runs(mask):
+    out, i, n = [], 0, len(mask)
+    while i < n:
+        if mask[i]:
+            j = i
+            while j + 1 < n and mask[j + 1]:
+                j += 1
+            out.append((i, j))
+            i = j + 1
+        else:
+            i += 1
+    return out
+
+
+class YJC:
+    """YWD SS line, station 22 "YJC-SS-09": the LEFT person of camera 22 (box centre x < 0.50), seen from behind.
+
+    Seen in the video, per rail (median seconds, 34 cycles annotated frame by frame; validation/yjc[_b]_annotations.json):
+      takes the taped rail from the front tray with the right hand (0.8) -> lays it in the jig, takes a small dark part
+      from the box left of the tool nose and fits it, pulls the blue tool down (4.0) -> tool down at its first stop (3.3)
+      -> second stop (3.1) -> tool back at the top, right hand still on it (2.0) -> right glove at the yellow fixture: opens
+      the jig and lifts the finished rail out (2.9) -> stands it in the blue bin at the left (1.8; every 5th rail the bin
+      is changed, 6-16 s) -> turns back to the tray (0.2; longer only when no rail is there).
+    The tool moves only while the hands are on it: there is no machine time to wait for.
+    """
+    key, cams, station_id, title = "yjc", (22,), 22, "YJC-SS-09 (YWD SS)"
+    TOP, LOW = (0.43, 0.22, 0.47, 0.28), (0.43, 0.35, 0.47, 0.41)   # the tool at its top rest / lowered
+    FIX = (0.44, 0.53, 0.50, 0.64)                                  # yellow fixture (white glove = unload)
+    TOP_DOWN, TOP_UP = 0.30, 0.50  # blue share in the top-rest box: below = tool pulled down, above again = back up
+    DOWN_MIN, DOWN_MAX = 3.0, 20.0
+    MID_PAD = 1.5                  # second stop: the dip of the lowered-tool box, this far from going down / up
+    PICK_BOX = (0.47, 0.64, 0.66, 1.01)   # right wrist at the rail in the front tray
+    PICK_WIN = (8.0, 2.5)          # the pick is the last tray visit 8.0-2.5 s before the tool goes down
+    PICK_DEFAULT = 4.8             # no tray visit seen: this long before the tool goes down (median)
+    FIX_WHITE = 0.12
+    UNLOAD_LEAD = 0.1
+    BIN_X = 0.20                   # head x left of this = over the blue bin
+    BIN_LEAD, BACK_LAG = 0.1, 0.2
+    BIN_CHANGE = 4.0               # at the bin longer than this = a bin change
+    WAIT_RAIL = 2.0                # back at the tray this long before the pick = waiting for a rail
+    MAX_CYCLE = 60.0
+    ORDER = [("PICK", "pick_rail"), ("LOAD", "load_jig"), ("RIV1", "rivet_point_1"), ("RIV2", "rivet_point_2"),
+             ("RET", "tool_return"), ("UNLOAD", "unload"), ("BIN", "put_in_bin"), ("BACK", "return_to_tray")]
+    NAMES = {
+        "PICK": ("Take the taped rail from the front tray", "#0ea5e9"),
+        "LOAD": ("Lay the rail in the jig, fit the small part, pull the tool down", "#2563eb"),
+        "RIV1": ("Tool down: first stop", "#a855f7"),
+        "RIV2": ("Tool down: second stop", "#d946ef"),
+        "RET": ("Tool back up, hand on the tool", "#f59e0b"),
+        "UNLOAD": ("Open the jig, take the finished rail out", "#16a34a"),
+        "BIN": ("Put the finished rail in the blue bin (bin change every 5 rails)", "#14b8a6"),
+        "BACK": ("Turn back to the front tray / wait for the next rail", "#94a3b8"),
+    }
+    METHOD = [
+        "Operator: the left person of camera 22 (box centre x left of 0.50), followed from frame to frame.",
+        "Tool down / up: the blue tool leaves its top rest (blue share in the box x 0.43-0.47, y 0.22-0.28 below 0.30) and "
+        "comes back (above 0.50) 3-20 s later. Second stop: the dip of the lowered-tool box (y 0.35-0.41) in the middle "
+        "of the down time.",
+        "Cycle start (pick): the last time the right wrist is at the rail in the front tray (x 0.47-0.66, y below 0.64) "
+        "8-2.5 s before the tool goes down; load starts when the wrist leaves the tray. Unload: the white glove in the "
+        "yellow fixture after the tool is up. Bin: the head over the blue bin (x left of 0.20) until it leaves the bin "
+        "for the last time before the next pick; longer than 4 s = a bin change.",
+        "Checked against 34 cycles annotated frame by frame on the full-resolution video (2026-11-25 09:44-09:52 and "
+        "09:56-10:00): 34/34 cycles found, no extra cycles, 6/6 bin changes; pick, load, tool down / up, unload and bin "
+        "within 0.1 s (median), all within 0.4 s; second stop within 0.5 s in 24 of 34.",
+    ]
+    UNSEEN = ["What the small dark part from the box left of the tool nose is, and where exactly it is fitted.",
+              "What the tool does at each stop (it looks like a rivet tool), and the inside of the jig while the tool is down.",
+              "What the left hand does while the tool goes back up (hidden by the arm and head)."]
+
+    def features(self, frames):
+        rows, last = [], None
+        for f in frames:
+            img = read_frame(f)
+            if img is None:
+                continue
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            row = [f["t"], _hsv_share(hsv, self.TOP, "toolblue"), _hsv_share(hsv, self.LOW, "toolblue"),
+                   _hsv_share(hsv, self.FIX, "white"), NAN, NAN, NAN, NAN, NAN]
+            cand = []
+            for p in f["p"]:
+                b, k = p.get("b"), p.get("k")
+                if not b or not k:
+                    continue
+                cx = (b[0] + b[2]) / 2
+                if cx < 0.50 and (b[3] - b[1]) > 0.35:
+                    cand.append((abs(cx - last) if last is not None else abs(cx - 0.3), p, cx))
+            if cand:
+                _, p, cx = min(cand, key=lambda c: c[0])
+                last = cx
+                k = p["k"]
+                hd = [k[q][0] for q in range(5) if k[q][2] > 0.3]
+                row[4] = float(np.mean(hd)) if hd else NAN
+                row[5], row[6], row[7] = k[10][0], k[10][1], k[10][2]
+            rows.append(row)
+        return np.array(rows, float)
+
+    def detect(self, frames):
+        A = self.features(frames)
+        if len(A) < 50:
+            return []
+        T, tb, lb, fix, hx, rx, ry, rc = (A[:, j] for j in range(8))
+        n = len(T)
+        rxn = np.where(rc > 0.3, rx, NAN)
+        ryn = np.where(rc > 0.3, ry, NAN)
+        top = np.nan_to_num(tb, nan=1.0)
+        downs, i = [], 0
+        while i < n:
+            if top[i] < self.TOP_DOWN:
+                j = i
+                while j + 1 < n and top[j + 1] < self.TOP_UP:
+                    j += 1
+                if j + 1 < n and self.DOWN_MIN <= T[j + 1] - T[i] <= self.DOWN_MAX:
+                    downs.append((i, j + 1))
+                i = j + 1
+            else:
+                i += 1
+        bx = self.PICK_BOX
+        in_tray = (np.nan_to_num(rxn) >= bx[0]) & (np.nan_to_num(rxn) <= bx[2]) & (np.nan_to_num(ryn) >= bx[1])
+        tray_runs = _runs(in_tray)
+        head_bin = np.nan_to_num(hx, nan=1.0) < self.BIN_X
+        ev = []
+        for i, j in downs:
+            e = {"rivet_point_1": T[i], "tool_return": T[j]}
+            m = np.where((T >= T[i] + self.MID_PAD) & (T <= T[j] - self.MID_PAD))[0]
+            if len(m):
+                e["rivet_point_2"] = T[m[int(np.argmin(np.nan_to_num(lb[m], nan=1.0)))]]
+            m = np.where(in_tray & (T >= T[i] - self.PICK_WIN[0]) & (T <= T[i] - self.PICK_WIN[1]))[0]
+            if len(m):
+                r = next(x for x in tray_runs if x[0] <= m[-1] <= x[1])
+                e["pick_rail"] = T[r[0]]
+                e["load_jig"] = T[r[1] + 1] if r[1] + 1 < n else T[r[1]]
+            ev.append(e)
+
+        def pick(e):
+            return e.get("pick_rail", e["rivet_point_1"] - self.PICK_DEFAULT)
+        for e, nx in zip(ev, ev[1:] + [None]):
+            lim = nx["rivet_point_1"] if nx else T[-1]
+            m = np.where((T > e["tool_return"]) & (T < lim) & (np.nan_to_num(fix) > self.FIX_WHITE))[0]
+            if len(m):
+                e["unload"] = T[m[0]] - self.UNLOAD_LEAD
+            a = e.get("unload", e["tool_return"])
+            m = np.where((T > a) & (T < (pick(nx) if nx else lim)) & head_bin)[0]
+            if len(m):
+                e["put_in_bin"] = T[m[0]] - self.BIN_LEAD
+                e["return_to_tray"] = (T[m[-1] + 1] if m[-1] + 1 < n else T[m[-1]]) + self.BACK_LAG
+                e["bin_sec"] = T[m[-1]] - T[m[0]]
+        cycles = []
+        for e, nx in zip(ev, ev[1:]):
+            s0, s1 = pick(e), pick(nx)
+            if not 0 < s1 - s0 <= self.MAX_CYCLE:
+                continue
+            inside = T[(T >= s0) & (T <= s1)]
+            if len(inside) > 1 and np.diff(inside).max() > 3.0:
+                continue                   # a gap in the recording inside: not a cycle of its own
+            c = {"start": s0, "end": s1, "pick_rail": s0}
+            for k in ("load_jig", "rivet_point_1", "rivet_point_2", "tool_return", "unload", "put_in_bin", "return_to_tray"):
+                if k in e and s0 <= e[k] < s1 - (0.05 if k == "return_to_tray" else 0.0):
+                    c[k] = e[k]
+            c["bin_change"] = bool(e.get("bin_sec", 0.0) > self.BIN_CHANGE)
+            cycles.append(c)
+        return cycles
+
+    def extra(self, cycles):
+        out = []
+        down = [c["tool_return"] - c["rivet_point_1"] for c in cycles if "tool_return" in c and "rivet_point_1" in c]
+        if down:
+            out.append(f"The tool is down median {stat.median(down):.1f}s per rail (both stops); it moves only while the "
+                       f"operator holds it, so there is no machine time to wait for.")
+        bc = [c for c in cycles if c.get("bin_change")]
+        if bc:
+            t = [c["return_to_tray"] - c["put_in_bin"] for c in bc if "return_to_tray" in c and "put_in_bin" in c]
+            out.append(f"Bin changes: {len(bc)} in {len(cycles)} rails (about one per {len(cycles) / len(bc):.0f} rails)"
+                       + (f", median {stat.median(t):.1f}s at the bin." if t else "."))
+        wait = [c["end"] - c["return_to_tray"] for c in cycles if "return_to_tray" in c and not c.get("bin_change")
+                and c["end"] - c["return_to_tray"] > self.WAIT_RAIL]
+        if wait:
+            out.append(f"Waited for the next rail at the front tray in {len(wait)} of {len(cycles)} cycles "
+                       f"(median {stat.median(wait):.1f}s): the taping station was behind.")
+        return out
+
+
+class YTP:
+    """YWD SS line, station 23 "Tapping" (taping): the RIGHT person of camera 22, facing the camera (so the right hand is
+    on the picture left).
+
+    Seen in the video, per rail (median seconds, 34 cycles annotated frame by frame; validation/ytp[_b]_annotations.json):
+      lifts the taped rail off the two jigs and puts it into the sloped front tray (chute) for YJC-SS-09 (1.7) -> takes a
+      new rail from the box at the right edge (0.9) -> puts it on the jigs (0.7) -> pulls tape strip 1 from the automatic
+      dispenser and readies it at the chest (1.5) -> lays it along the rail and presses it with the fingers (2.9) -> rubs
+      it down with a white cloth (1.8) -> turns the rail over (0.8) -> strip 2 the same way (1.7 + 2.8 + 1.9).
+    """
+    key, cams, station_id, title = "ytp", (22,), 23, "Taping (YWD SS)"
+    CHUTE, RBOX, OUTLET = (0.58, 0.50, 0.69, 0.80), (0.94, 0.42, 1.00, 0.75), (0.78, 0.62, 0.84, 0.72)
+    CHUTE_THR = 0.03       # blue sleeve in the chute-top box = the rail goes into the tray
+    CHUTE_LAG = 0.77       # ... this long after the rail left the jigs (median over 34)
+    CHUTE_MERGE = 8.0
+    BOX_THR, BOX_AFTER = 0.22, 5.0   # blue sleeve in the right-edge box = taking a new rail (within 5 s of the chute)
+    BOX_LEAD, PLACE_LAG = 0.10, 0.40
+    SKIN_LO = 0.08         # skin at the dispenser outlet = a touch
+    CHEST_Y, CHEST_WIN, CHEST_BONUS = 0.46, 1.4, 0.3
+    STRIP_MIN = 0.25       # touch score (frames x peak skin share, + bonus when the wrist rises to the chest) of a pull
+    STRIP1_WIN, STRIP_GAP, STRIP2_END = 6.0, 4.0, 2.0
+    HOLD_BAND, LAY_LAG, LAY_DEFAULT, STRIP_LEAD = 0.025, -0.4, 1.5, 0.08
+    DIP_X, TURN_X, RUB_MIN = 0.895, 0.915, 1.0   # the left hand (picture right) comes in: cloth pick, turn
+    MAX_CYCLE = 60.0
+    ORDER = [("UNLOAD", "unload_to_chute"), ("TAKE", "take_new_rail"), ("PLACE", "place_rail_on_jigs"),
+             ("STRIP1", "take_strip_1"), ("LAY1", "lay_strip_1"), ("RUB1", "rub_strip_1"), ("TURN", "turn_rail"),
+             ("STRIP2", "take_strip_2"), ("LAY2", "lay_strip_2"), ("RUB2", "rub_strip_2")]
+    NAMES = {
+        "UNLOAD": ("Lift the taped rail into the front tray (chute)", "#16a34a"),
+        "TAKE": ("Take a new rail from the box at the right", "#0ea5e9"),
+        "PLACE": ("Put the rail on the two jigs", "#2563eb"),
+        "STRIP1": ("Pull tape strip 1, ready it at the chest", "#a855f7"),
+        "LAY1": ("Lay strip 1 along the rail, press it with the fingers", "#f59e0b"),
+        "RUB1": ("Rub strip 1 down with the cloth", "#ef4444"),
+        "TURN": ("Turn the rail over", "#94a3b8"),
+        "STRIP2": ("Pull tape strip 2, ready it at the chest", "#d946ef"),
+        "LAY2": ("Lay strip 2 along the rail, press it with the fingers", "#eab308"),
+        "RUB2": ("Rub strip 2 down with the cloth", "#f97316"),
+    }
+    METHOD = [
+        "Operator: the right person of camera 22 (box centre x right of 0.62, standing behind the table).",
+        "Cycle start: the shirt-blue sleeve enters the top of the front tray (x 0.58-0.69, y 0.50-0.80) 0.77 s after the "
+        "rail left the jigs; onsets within 8 s are one rail, and one counts only when a new rail is taken (sleeve in the "
+        "right-edge box x 0.94-1.00) within 5 s, or two strip pulls follow. Gaps of more than 60 s (away) are no cycle.",
+        "Strip pulls: skin at the dispenser outlet (x 0.78-0.84, y 0.62-0.72), scored by length x strength, with a bonus "
+        "when the right wrist then rises to the chest; strip 1 is the first strong touch after the rail is on the jigs, "
+        "strip 2 the strongest one at least 4 s later. Lay: the right wrist leaves its highest point (-0.4 s). Rub and turn: "
+        "the left hand (picture right) comes in to x 0.90 (cloth pick) and stays in until the strip-2 pull (turn).",
+        "Checked against 34 cycles annotated frame by frame on the full-resolution video (2026-11-25 09:44-09:52 and "
+        "09:56-09:59): 32/32 normal cycles found, no extra cycles (the 88 s stop when the operator left the station is no "
+        "cycle); tray, new rail, jigs and both strip pulls within 0.15 s (median), lay, rub and turn within 0.1-0.3 s "
+        "(median); lay of strip 2 off by more than 0.5 s in 4 of 32 (strip held low, no clear chest hold).",
+        "A tape-roll change can show as two shorter cycles: the sleeve passes the tray while the roll is fitted.",
+    ]
+    UNSEEN = ["How many new rails are left in the box at the right edge, and who refills it (out of the picture).",
+              "What exactly is done with the strip at chest height (the tape is clear).",
+              "Whether the tape lands in the right place on the rail: there is no visible check step."]
+
+    def features(self, frames):
+        rows, last = [], None
+        for f in frames:
+            img = read_frame(f)
+            if img is None:
+                continue
+            hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+            row = [f["t"], _hsv_share(hsv, self.CHUTE, "blue"), _hsv_share(hsv, self.RBOX, "blue"),
+                   _hsv_share(hsv, self.OUTLET, "skin"), NAN, NAN, NAN, NAN, NAN, NAN]
+            cand = []
+            for p in f["p"]:
+                b, k = p.get("b"), p.get("k")
+                if not b or not k:
+                    continue
+                cx = (b[0] + b[2]) / 2
+                if cx > 0.62 and b[1] < 0.35:
+                    cand.append((abs(cx - last) if last is not None else abs(cx - 0.8), p, cx))
+            if cand:
+                _, p, cx = min(cand, key=lambda c: c[0])
+                last = cx
+                k = p["k"]
+                row[4:10] = [k[10][0], k[10][1], k[10][2], k[9][0], k[9][1], k[9][2]]
+            rows.append(row)
+        return np.array(rows, float)
+
+    @staticmethod
+    def _onsets(sig, thr):
+        return _runs(np.nan_to_num(sig) > thr)
+
+    def detect(self, frames):
+        A = self.features(frames)
+        if len(A) < 50:
+            return []
+        T, CH, RB, SK, rx, ry, rc, lx, ly, lc = (A[:, j] for j in range(10))
+        n = len(T)
+        ryn = np.where(rc > 0.3, ry, NAN)
+        lxn = np.where(lc > 0.3, lx, NAN)
+        boxes = [(T[i], T[j]) for i, j in self._onsets(RB, self.BOX_THR)]
+        touches = self._onsets(SK, self.SKIN_LO)
+
+        def touch_info(i, j):
+            peak = float(np.nanmax(SK[i:j + 1]))
+            m = np.where((T > T[j]) & (T <= T[j] + self.CHEST_WIN))[0]
+            ys = np.nan_to_num(ryn[m], nan=1.0)
+            lay, chest = T[j] + self.LAY_DEFAULT, False
+            if len(m) and ys.min() < 0.9:
+                lo = ys.min()
+                chest = lo < self.CHEST_Y
+                k = int(m[int(np.argmin(ys))])
+
+                def held(q):
+                    return q < n and (np.isnan(ryn[q]) or ryn[q] < lo + self.HOLD_BAND)
+                while k + 1 < n and (held(k + 1) or held(k + 2)):
+                    k += 1                 # the strip held at its highest point (one frame off is a wobble)
+                if k + 1 < n and T[k + 1] - T[j] < 6.0:
+                    lay = T[k + 1] + self.LAY_LAG
+            return {"t": T[i] - self.STRIP_LEAD, "end": T[j], "lay": lay,
+                    "score": (j - i + 1) * peak + (self.CHEST_BONUS if chest else 0.0)}
+
+        chute = []
+        for i, _ in self._onsets(CH, self.CHUTE_THR):
+            if not chute or T[i] - chute[-1] >= self.CHUTE_MERGE:
+                chute.append(T[i])
+
+        def real(k):
+            t = chute[k]
+            if any(t - self.CHUTE_LAG < b0 < t + self.BOX_AFTER for b0, _ in boxes):
+                return True
+            nxt = chute[k + 1] if k + 1 < len(chute) else T[-1]
+            strong = [x for x in (touch_info(i, j) for i, j in touches if t < T[i] < nxt) if x["score"] >= self.STRIP_MIN]
+            return len(strong) >= 2 or T[-1] - t < self.BOX_AFTER   # at the end of the data it cannot be checked yet
+        chute = [t for k, t in enumerate(chute) if real(k)]
+
+        def dips(a, b, x):
+            return np.where((T >= a) & (T < b) & (np.nan_to_num(lxn, nan=1.0) <= x))[0]
+        cycles = []
+        for s0, s1 in zip(chute, chute[1:]):
+            if s1 - s0 > self.MAX_CYCLE:
+                continue
+            a, b = s0 - self.CHUTE_LAG, s1 - self.CHUTE_LAG
+            inside = T[(T >= a) & (T <= b)]
+            if len(inside) > 1 and np.diff(inside).max() > 3.0:
+                continue                   # a gap in the recording inside: not a cycle of its own
+            c = {"start": a, "end": b, "unload_to_chute": a}
+            bx = [x for x in boxes if a < x[0] < b]
+            if bx:
+                c["take_new_rail"] = bx[0][0] - self.BOX_LEAD
+                c["place_rail_on_jigs"] = bx[0][1] + self.PLACE_LAG
+            tc = [touch_info(i, j) for i, j in touches if c.get("place_rail_on_jigs", a) <= T[i] < b]
+            s1_ = next((x for x in tc if x["score"] >= self.STRIP_MIN and x["t"] < c.get("place_rail_on_jigs", a) + self.STRIP1_WIN), None)
+            if s1_ is not None:
+                c["take_strip_1"], c["lay_strip_1"] = s1_["t"], s1_["lay"]
+                rest = [x for x in tc if s1_["end"] + self.STRIP_GAP <= x["t"] < b - self.STRIP2_END]
+                s2_ = max(rest, key=lambda x: x["score"]) if rest else None
+                if s2_ is not None and s2_["score"] >= self.STRIP_MIN:
+                    c["take_strip_2"], c["lay_strip_2"] = s2_["t"], s2_["lay"]
+            if "lay_strip_1" in c:
+                d = dips(c["lay_strip_1"] + self.RUB_MIN, c.get("take_strip_2", b), self.DIP_X)
+                if len(d):
+                    c["rub_strip_1"] = T[d[0]]
+            if "take_strip_2" in c:
+                k = np.where((T >= c.get("rub_strip_1", c.get("lay_strip_1", a)) + 0.4) & (T < c["take_strip_2"]))[0]
+                run = None
+                for q in k[::-1]:
+                    if np.isnan(lxn[q]) or lxn[q] <= self.TURN_X:
+                        run = q
+                    else:
+                        break
+                if run is not None:
+                    c["turn_rail"] = T[run]
+            if "lay_strip_2" in c:
+                d = dips(c["lay_strip_2"] + self.RUB_MIN, b - 0.3, self.DIP_X)
+                if len(d):
+                    c["rub_strip_2"] = T[d[0]]
+            # keep the element order (a late lay / early rub must not run backwards)
+            last = a
+            for _, k in self.ORDER:
+                if k in c:
+                    if c[k] < last or c[k] >= b:
+                        del c[k]
+                    else:
+                        last = c[k]
+            cycles.append(c)
+        return cycles
+
+    def extra(self, cycles):
+        out = []
+        ch = [(c["lay_strip_1"] - c["take_strip_1"]) + (c["lay_strip_2"] - c["take_strip_2"]) for c in cycles
+              if all(k in c for k in ("take_strip_1", "lay_strip_1", "take_strip_2", "lay_strip_2"))]
+        if ch:
+            out.append(f"Pulling and readying the two tape strips takes median {stat.median(ch):.1f}s per rail "
+                       f"({100 * stat.median(ch) / max(1.0, stat.median(c['end'] - c['start'] for c in cycles)):.0f}% of the cycle).")
+        rub = [(c["turn_rail"] - c["rub_strip_1"]) for c in cycles if "turn_rail" in c and "rub_strip_1" in c]
+        if rub:
+            out.append(f"Rubbing strip 1 down with the cloth median {stat.median(rub):.1f}s.")
+        return out
+
+
+STATIONS = {"m1": M1, "m2": M2, "m34": M34, "m5": M5, "ymm": YMM, "yfi": YFI, "yml": YML, "yur": YUR, "yhs": YHS, "yxl": YXL, "yg1": YG1, "yg2": YG2, "ylr": YLR, "ysr": YSR, "ysf": YSF,
+            "yjc": YJC, "ytp": YTP}
 
 
 # ======================================================================== shared: segments, stats, report

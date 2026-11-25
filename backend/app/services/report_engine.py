@@ -57,6 +57,10 @@ STATION_JOBS = {
     # YRA line: Final Inspection (right person on the same camera). Validated on 4 layouts (teal tray, blue bin night and
     # after midnight, grey boxes); a built-in check against Mechanical Movement leaves out 10-minute blocks that do not agree.
     "yfi": {"cams": (13,), "stations": (11, 21), "cmd": [str(TOOLS / "station_breakup.py"), "yfi", "--auto"], "pattern": "auto_yfi_*[0-9]"},
+    # YWD SS line (one camera, .213 recorded as camera 22): the right person tapes the rails (station 23), the left person
+    # works them at machine YJC-SS-09 (station 22)
+    "yjc": {"cams": (22,), "stations": (22,), "cmd": [str(TOOLS / "station_breakup.py"), "yjc", "--auto"], "pattern": "auto_yjc_*[0-9]"},
+    "ytp": {"cams": (22,), "stations": (23,), "cmd": [str(TOOLS / "station_breakup.py"), "ytp", "--auto"], "pattern": "auto_ytp_*[0-9]"},
 }
 
 
