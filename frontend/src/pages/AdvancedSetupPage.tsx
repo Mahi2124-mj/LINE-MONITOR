@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowDown, ArrowUp, Cctv, Factory, ListOrdered, Pencil, Plus, Save, Shapes, Trash, TriangleAlert } from 'lucide-react';
 import { api } from '../api/client';
-import type { Camera, CameraInput, Line, LineInput, SourceType, Station, StationInput } from '../api/types';
+import type { Camera, CameraInput, Line, LineInput, SlotPlan, SourceType, Station, StationInput } from '../api/types';
 import { EmptyState, ErrorState, Skeleton } from '../components/EmptyState';
 import { ConfirmDialog, Field, Modal, NumberInput, TagInput, Toggle } from '../components/Form';
 import { Panel } from '../components/Panel';
@@ -10,10 +10,10 @@ import { Chip } from '../components/StateBadge';
 import { usePageTitle } from '../context/PageTitleContext';
 import { useToast } from '../context/ToastContext';
 import { usePolling } from '../hooks/usePolling';
-import { errorMessage, fmtSec } from '../lib/format';
+import { errorMessage, fmtSec, lineTag } from '../lib/format';
 import { SOURCE_TYPE_META } from '../lib/meta';
 
-const EMPTY_LINE: LineInput = { name: '', code: '', description: '', takt_time_sec: 60, shift_start: '08:00', shift_end: '16:00', is_active: true };
+const EMPTY_LINE: LineInput = { name: '', code: '', description: '', takt_time_sec: 60, shift_start: '08:00', shift_end: '16:00', slot_plan: [], is_active: true };
 
 export default function SetupPage() {
   usePageTitle('Advanced setup', [{ label: 'Lines & cameras', to: '/setup' }]);
@@ -70,11 +70,10 @@ export default function SetupPage() {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="truncate text-sm font-medium text-ink">{l.name}</span>
-                        <span className="text-[10px] font-bold text-ink-3">{l.code}</span>
                       </span>
                       <span className="block text-[11px] text-ink-3 tabular-nums">
                         {l.station_count} steps · {l.camera_count} cameras · takt {fmtSec(l.takt_time_sec)}
-                        {!l.is_active && ' · inactive'}
+                        {!l.is_active && ' · disabled'}
                       </span>
                     </span>
                   </button>
@@ -106,6 +105,8 @@ export default function SetupPage() {
                   takt_time_sec: line.takt_time_sec,
                   shift_start: line.shift_start,
                   shift_end: line.shift_end,
+                  slot_plan: line.slot_plan ?? [],
+                  off_days: line.off_days ?? [],
                   is_active: line.is_active,
                 }}
                 onSaved={() => lines.reload()}
@@ -142,6 +143,104 @@ export default function SetupPage() {
 }
 
 /* ------------------------------------------------------------------ line */
+
+/** Planned output per time slot of the day (the plan vs actual table and chart use these instead of takt × shift). */
+function SlotPlanEditor({ value, onChange }: { value: SlotPlan[]; onChange: (v: SlotPlan[]) => void }) {
+  const total = value.reduce((k, s) => k + (s.plan || 0), 0);
+  const upd = (i: number, patch: Partial<SlotPlan>) => onChange(value.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+  const add = () => {
+    const last = value[value.length - 1];
+    onChange([...value, { start: last?.end ?? '08:00', end: last?.end ?? '09:00', plan: last?.plan ?? 0 }]);
+  };
+  return (
+    <div className="rounded-lg border border-edge p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-medium text-ink">Time slots · planned output</div>
+          <div className="text-[11px] text-ink-3">
+            {value.length
+              ? `${value.length} slots · total plan ${total.toLocaleString()} per day. Breaks are inside the slots (lower plan). Day shift first, then the night shift (Shift A / B).`
+              : 'No slots: the plan is takt × shift time. Add the day’s time slots to get plan vs actual per slot.'}
+          </div>
+        </div>
+        <button type="button" className="btn btn-sm btn-ghost" onClick={add}>
+          + Add slot
+        </button>
+      </div>
+      {value.length > 0 && (
+        <div className="grid gap-1.5">
+          {value.map((s, i) => (
+            <div key={i} className="flex flex-wrap items-center gap-2">
+              <input className="input w-28" type="time" value={s.start} onChange={(e) => upd(i, { start: e.target.value })} aria-label="Slot start" />
+              <span className="text-ink-3">–</span>
+              <input className="input w-28" type="time" value={s.end} onChange={(e) => upd(i, { end: e.target.value })} aria-label="Slot end" />
+              <input
+                className="input w-24 text-right"
+                type="number"
+                min={0}
+                value={s.plan}
+                onChange={(e) => upd(i, { plan: Math.max(0, Math.round(Number(e.target.value) || 0)) })}
+                aria-label="Planned units"
+              />
+              <span className="text-[11px] text-ink-3">units</span>
+              <select
+                className="input w-28"
+                value={s.shift ?? ''}
+                onChange={(e) => upd(i, { shift: e.target.value || null })}
+                aria-label="Shift"
+                title="Auto: the first slots are Shift A, a gap of 45 min or more starts the next shift"
+              >
+                <option value="">Shift: auto</option>
+                <option value="A">Shift A</option>
+                <option value="B">Shift B</option>
+              </select>
+              <button type="button" className="btn btn-sm btn-ghost" onClick={() => onChange(value.filter((_, j) => j !== i))} aria-label="Remove slot">
+                <Trash className="size-3.5" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function OffDaysEditor({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const [day, setDay] = useState('');
+  const add = () => {
+    if (day && !value.includes(day)) onChange([...value, day].sort());
+    setDay('');
+  };
+  const fmt = (d: string) => new Date(`${d}T00:00`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+  return (
+    <div className="rounded-lg border border-edge p-3">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="text-sm font-medium text-ink">Non-working days</div>
+          <div className="text-[11px] text-ink-3">No production planned: the plan is 0 and no stoppage alerts are raised on these dates.</div>
+        </div>
+        <div className="flex items-center gap-2">
+          <input className="input w-40" type="date" value={day} onChange={(e) => setDay(e.target.value)} aria-label="Non-working day" />
+          <button type="button" className="btn btn-sm btn-ghost" onClick={add} disabled={!day}>
+            + Add day
+          </button>
+        </div>
+      </div>
+      {value.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {value.map((d) => (
+            <span key={d} className="inline-flex items-center gap-1 rounded-md border border-edge py-0.5 pl-2 pr-1 text-xs text-ink-2">
+              {fmt(d)}
+              <button type="button" className="rounded p-0.5 text-ink-3 hover:text-ink" onClick={() => onChange(value.filter((x) => x !== d))} aria-label={`Remove ${d}`}>
+                <Trash className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function LineForm({ line, initial, onSaved, onDeleted }: { line?: Line; initial: LineInput; onSaved: (l: Line) => void; onDeleted?: () => void }) {
   const { push } = useToast();
@@ -205,10 +304,18 @@ function LineForm({ line, initial, onSaved, onDeleted }: { line?: Line; initial:
     >
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <Field label="Name *" className="col-span-2">
-          <input className="input" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="e.g. Pump assembly line 1" />
+          <input
+            className="input"
+            value={form.name}
+            onChange={(e) => {
+              const name = e.target.value;
+              setForm((f) => ({ ...f, name, code: !f.code || f.code === lineTag({ name: f.name }) ? lineTag({ name }) : f.code }));
+            }}
+            placeholder="e.g. YRA SEAT SLIDER"
+          />
         </Field>
-        <Field label="Code *">
-          <input className="input uppercase" value={form.code} onChange={(e) => set('code', e.target.value.toUpperCase())} placeholder="PA1" maxLength={12} />
+        <Field label="Short name *" hint="Shown in the menu: the first word of the name">
+          <input className="input uppercase" value={form.code} onChange={(e) => set('code', e.target.value.toUpperCase())} placeholder="YRA" maxLength={12} />
         </Field>
         <Field label="Takt time *" hint={form.takt_time_sec > 0 ? `= ${(3600 / form.takt_time_sec).toFixed(1)} units/h demand` : undefined}>
           <NumberInput value={form.takt_time_sec} onChange={(v) => set('takt_time_sec', v)} min={1} step={0.5} suffix="s" />
@@ -223,7 +330,13 @@ function LineForm({ line, initial, onSaved, onDeleted }: { line?: Line; initial:
           <input className="input" type="time" value={form.shift_end} onChange={(e) => set('shift_end', e.target.value)} />
         </Field>
         <div className="col-span-2 flex items-end pb-1">
-          <Toggle checked={form.is_active} onChange={(v) => set('is_active', v)} label="Active" description="Inactive lines are not planned or alerted." />
+          <Toggle checked={form.is_active} onChange={(v) => set('is_active', v)} label="Enabled" description="A disabled line's cameras are stopped: no cycles, alerts or reports." />
+        </div>
+        <div className="col-span-2 md:col-span-4">
+          <SlotPlanEditor value={form.slot_plan ?? []} onChange={(v) => set('slot_plan', v)} />
+        </div>
+        <div className="col-span-2 md:col-span-4">
+          <OffDaysEditor value={form.off_days ?? []} onChange={(v) => set('off_days', v)} />
         </div>
       </div>
       <ConfirmDialog
@@ -348,6 +461,7 @@ function StationsEditor({ line, onChanged }: { line: Line; onChanged: () => void
                   <span className="tabular-nums">target {fmtSec(s.target_cycle_sec)}</span>
                   <span className="tabular-nums">{s.expected_picks} picks/cycle</span>
                   {s.operator_name && <span>operator {s.operator_name}</span>}
+                  {s.parallel_group && <span>parallel with: {s.parallel_group}</span>}
                   {s.parts_added.length > 0 && (
                     <span className="flex flex-wrap items-center gap-1">
                       adds:
@@ -415,6 +529,7 @@ function StationModal({ lineId, station, onClose, onSaved }: { lineId: number; s
           target_cycle_sec: station.target_cycle_sec,
           expected_picks: station.expected_picks,
           operator_name: station.operator_name,
+          parallel_group: station.parallel_group,
           is_active: station.is_active,
         }
       : emptyStation(lineId),
@@ -461,8 +576,11 @@ function StationModal({ lineId, station, onClose, onSaved }: { lineId: number; s
         <Field label="Code">
           <input className="input uppercase" value={form.code} onChange={(e) => set('code', e.target.value.toUpperCase())} placeholder="S1" />
         </Field>
-        <Field label="Operator">
-          <input className="input" value={form.operator_name} onChange={(e) => set('operator_name', e.target.value)} />
+        <Field label="Operator" hint="Same name on several steps = one person runs them (line balance per person)">
+          <input className="input" value={form.operator_name} onChange={(e) => set('operator_name', e.target.value)} placeholder="e.g. Op 1" />
+        </Field>
+        <Field label="Parallel machine" hint="Same name on several steps = copies of one machine that share the parts">
+          <input className="input" value={form.parallel_group ?? ''} onChange={(e) => set('parallel_group', e.target.value)} placeholder="e.g. Guide S/A Insert" />
         </Field>
         <Field label="Operation" className="col-span-2 md:col-span-4" hint="What work happens at this step">
           <textarea className="input min-h-[60px]" value={form.operation} onChange={(e) => set('operation', e.target.value)} />

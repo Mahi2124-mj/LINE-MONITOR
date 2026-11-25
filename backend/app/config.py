@@ -46,6 +46,10 @@ class Settings:
     pose_conf: float = float(_env("POSE_CONF", "0.35"))
     process_width: int = int(_env("PROCESS_WIDTH", "640"))
     stream_fps: float = float(_env("STREAM_FPS", "10"))
+    # cameras with the same source (several stations on one physical camera) share one stream read + one pose run
+    share_streams: bool = _env_bool("SHARE_STREAMS", True)
+    # cycles of the steps with a validated detector come from it (services/detector_feed.py), not the generic counter
+    detector_feed: bool = _env_bool("DETECTOR_FEED", True)
     jpeg_quality: int = int(_env("JPEG_QUALITY", "70"))
 
     heatmap_cols: int = 48

@@ -29,7 +29,9 @@ def list_lines(db: Session = Depends(get_db)):
 
 @router.post("", response_model=LineOut, status_code=201)
 def create_line(data: LineIn, db: Session = Depends(get_db)):
-    line = models.Line(**data.model_dump())
+    vals = data.model_dump()
+    vals["off_days"] = sorted({str(d) for d in vals["off_days"]})  # stored as text in JSON
+    line = models.Line(**vals)
     db.add(line)
     db.commit()
     return line_out(db, line)
@@ -47,8 +49,22 @@ def update_line(line_id: int, data: LineUpdate, db: Session = Depends(get_db)):
     upd = data.model_dump(exclude_unset=True)
     if "shift_start" in upd or "shift_end" in upd:
         LineIn(name=line.name, **{k: upd.get(k, getattr(line, k)) for k in ("shift_start", "shift_end")})  # validate HH:MM
+    old_takt = line.takt_time_sec
+    if "off_days" in upd:
+        upd["off_days"] = sorted({str(d) for d in upd["off_days"] or []})
     for k, v in upd.items():
         setattr(line, k, v)
+    if upd.get("takt_time_sec") and abs(upd["takt_time_sec"] - old_takt) > 1e-6:
+        # step targets that still follow the takt move with it (copies of one machine: n x takt); targets set by hand stay
+        sts = db.scalars(select(models.Station).where(models.Station.line_id == line_id)).all()
+        copies: dict[str, int] = {}
+        for s in sts:
+            if s.parallel_group:
+                copies[s.parallel_group] = copies.get(s.parallel_group, 0) + 1
+        for s in sts:
+            n = copies.get(s.parallel_group, 1) if s.parallel_group else 1
+            if abs(s.target_cycle_sec - old_takt * n) < 0.05:
+                s.target_cycle_sec = round(line.takt_time_sec * n, 2)
     db.commit()
     if was_active != line.is_active:
         if line.is_active:
@@ -84,7 +100,7 @@ def delete_line(line_id: int, db: Session = Depends(get_db)):
 @router.get("/{line_id}/analytics", response_model=LineAnalytics, response_model_by_alias=True)
 def line_analytics(line_id: int, range: RangeKey = Query("24h"), db: Session = Depends(get_db)):
     start, end = resolve_range(range)
-    return compute_line(db, _get(db, line_id), start, end)
+    return compute_line(db, _get(db, line_id), start, end, shift=range[-1] if range.startswith("shift") else None)
 
 
 @router.post("/{line_id}/stations/reorder", response_model=list[StationOut])

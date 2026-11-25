@@ -27,12 +27,14 @@ if not exist "frontend\dist\index.html" (
 )
 
 echo Starting Line Monitor server on %URL% ...
-REM Runs in the background without a window and restarts itself if it ever crashes.
-REM Stop it with "Stop Line Monitor.bat". Logs: backend\data\server.log, supervisor.log
+echo This takes about 15-30 seconds (longer right after the PC was switched on).
+echo Please wait - the dashboard opens by itself. No need to start it again.
+REM Runs in the background without a window and restarts itself if it ever crashes. A second start is harmless
+REM (only one supervisor runs). Stop it with "Stop Line Monitor.bat". Logs: backend\data\server.log, supervisor.log
 start "" /d "%~dp0backend" "%~dp0backend\.venv\Scripts\pythonw.exe" supervisor.py
 
-REM Wait until the server answers (max 90 s).
-powershell -NoProfile -Command "$d=(Get-Date).AddSeconds(90); while((Get-Date) -lt $d){ try { Invoke-RestMethod '%HEALTH%' -TimeoutSec 2 | Out-Null; exit 0 } catch { Start-Sleep -Milliseconds 700 } }; exit 1"
+REM Wait until the server answers (max 3 min), showing the seconds so far.
+powershell -NoProfile -Command "$t0=Get-Date; while(((Get-Date)-$t0).TotalSeconds -lt 180){ try { Invoke-RestMethod '%HEALTH%' -TimeoutSec 2 | Out-Null; Write-Host ''; exit 0 } catch { Write-Host -NoNewline ([char]13 + '  waiting for the server: ' + [int]((Get-Date)-$t0).TotalSeconds + ' s '); Start-Sleep -Milliseconds 700 } }; exit 1"
 if errorlevel 1 goto fail
 
 :open

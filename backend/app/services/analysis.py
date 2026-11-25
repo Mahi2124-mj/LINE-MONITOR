@@ -251,8 +251,11 @@ class AnalysisEngine:
             await asyncio.sleep(self.INTERVAL)
 
     def tick(self) -> None:
+        from .detector_feed import feed
+
         with SessionLocal() as db:
-            cams = [c.id for c in db.scalars(select(models.Camera)) if (c.config or {}).get("record")]
+            # a step counted by its checked detector gets its cycle analysis from those cycles (routers/machine_analysis.py)
+            cams = [c.id for c in db.scalars(select(models.Camera)) if (c.config or {}).get("record") and not feed.owns(c.station_id or -1)]
         for cid in cams:
             if get_model(cid) is None:
                 span = data_span(cid)

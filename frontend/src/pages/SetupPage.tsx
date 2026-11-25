@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, CircleCheck, CircleX, Factory, KeyRound, Loader2, P
 import { api } from '../api/client';
 import type { Line, LineSetupStep, ProbeResult } from '../api/types';
 import { ErrorState, Skeleton } from '../components/EmptyState';
-import { ConfirmDialog, Field, NumberInput } from '../components/Form';
+import { ConfirmDialog, Field, NumberInput, Toggle } from '../components/Form';
 import { Panel } from '../components/Panel';
 import { usePageTitle } from '../context/PageTitleContext';
 import { useToast } from '../context/ToastContext';
@@ -61,7 +61,10 @@ export default function SetupPage() {
                   onClick={() => select(l.id)}
                   className={`w-full px-4 py-2.5 text-left transition hover:bg-panel-2 ${lineId === l.id ? 'bg-panel-2 shadow-[inset_3px_0_0_#38bdf8]' : ''}`}
                 >
-                  <div className="truncate text-sm font-medium text-ink">{l.name}</div>
+                  <div className="flex items-center gap-2">
+                    <span className={`truncate text-sm font-medium ${l.is_active ? 'text-ink' : 'text-ink-3'}`}>{l.name}</span>
+                    {!l.is_active && <span className="shrink-0 rounded bg-zinc-700/50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-300">DISABLED</span>}
+                  </div>
                   <div className="text-xs text-ink-3">
                     {l.station_count} steps · {l.camera_count} cameras
                   </div>
@@ -90,6 +93,7 @@ export default function SetupPage() {
             lines.reload();
             setParams({}, { replace: true });
           }}
+          onChanged={lines.reload}
         />
       )}
     </div>
@@ -121,7 +125,19 @@ const newRow = (): Row => ({
   savedAddress: '',
 });
 
-function LineEditor({ lineId, first, onSaved, onDeleted }: { lineId: number | null; first: boolean; onSaved: (l: Line) => void; onDeleted: () => void }) {
+function LineEditor({
+  lineId,
+  first,
+  onSaved,
+  onDeleted,
+  onChanged,
+}: {
+  lineId: number | null;
+  first: boolean;
+  onSaved: (l: Line) => void;
+  onDeleted: () => void;
+  onChanged: () => void;
+}) {
   const { push } = useToast();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(lineId !== null);
@@ -134,6 +150,9 @@ function LineEditor({ lineId, first, onSaved, onDeleted }: { lineId: number | nu
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [active, setActive] = useState(true);
+  const [confirmDisable, setConfirmDisable] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
     if (lineId === null) return;
@@ -143,6 +162,7 @@ function LineEditor({ lineId, first, onSaved, onDeleted }: { lineId: number | nu
         if (cancelled) return;
         setName(line.name);
         setTakt(line.takt_time_sec);
+        setActive(line.is_active);
         const sorted = [...stations].sort((a, b) => a.sequence - b.sequence);
         setRows(
           sorted.length
@@ -244,13 +264,38 @@ function LineEditor({ lineId, first, onSaved, onDeleted }: { lineId: number | nu
         camera_source: r.status === 'ok' ? r.probe?.source ?? null : null,
       }));
       const res = await api.saveLineSetup({ line_id: lineId, name: name.trim(), takt_time_sec: takt, steps });
-      push({ kind: 'success', title: `${res.line.name} is live`, message: `${res.stations.length} steps · ${res.cameras.length} cameras running` });
+      push(
+        res.line.is_active
+          ? { kind: 'success', title: `${res.line.name} is live`, message: `${res.stations.length} steps · ${res.cameras.length} cameras running` }
+          : { kind: 'success', title: `${res.line.name} saved`, message: 'The line is disabled, so its cameras stay off. Enable it to go live.' },
+      );
       onSaved(res.line);
       navigate(`/lines/${res.line.id}`);
     } catch (e) {
       push({ kind: 'critical', title: 'Could not save the line', message: errorMessage(e) });
     } finally {
       setSaving(false);
+    }
+  };
+
+  // disabling stops the line's cameras (no cycles, alerts or reports); its settings and recorded data are kept
+  const setLineActive = async (value: boolean) => {
+    if (lineId === null) return;
+    setToggling(true);
+    try {
+      const l = await api.updateLine(lineId, { is_active: value });
+      setActive(l.is_active);
+      setConfirmDisable(false);
+      push(
+        value
+          ? { kind: 'success', title: `${l.name} enabled`, message: 'Its cameras are starting.' }
+          : { kind: 'success', title: `${l.name} disabled`, message: 'Its cameras are stopped. Settings and recorded data are kept.' },
+      );
+      onChanged();
+    } catch (e) {
+      push({ kind: 'critical', title: value ? 'Could not enable the line' : 'Could not disable the line', message: errorMessage(e) });
+    } finally {
+      setToggling(false);
     }
   };
 
@@ -292,6 +337,22 @@ function LineEditor({ lineId, first, onSaved, onDeleted }: { lineId: number | nu
             <NumberInput value={takt} onChange={(v) => setTakt(v > 0 ? v : 60)} min={1} suffix="s" />
           </Field>
         </div>
+        {lineId !== null && (
+          <div className="mt-4 border-t border-edge pt-4">
+            <Toggle
+              checked={active}
+              disabled={toggling}
+              onChange={(v) => (v ? setLineActive(true) : setConfirmDisable(true))}
+              label={active ? 'Line enabled' : 'Line disabled'}
+              badge={toggling ? <Loader2 className="size-3.5 animate-spin text-ink-3" /> : undefined}
+              description={
+                active
+                  ? 'Cameras run, cycles are counted, alerts and reports are made.'
+                  : 'Cameras are stopped: no cycles, alerts or reports. Settings and recorded data are kept. Switch on to start again.'
+              }
+            />
+          </div>
+        )}
       </Panel>
 
       <Panel title="Camera login" subtitle="Used when you type only the IP address. Leave empty if the cameras have no password." icon={<KeyRound className="size-4" />}>
@@ -385,10 +446,21 @@ function LineEditor({ lineId, first, onSaved, onDeleted }: { lineId: number | nu
             </button>
           )}
           <button type="button" className="btn btn-primary" onClick={save} disabled={saving || problems.length > 0}>
-            {saving ? <Loader2 className="size-4 animate-spin" /> : <Radio className="size-4" />} Save & go live
+            {saving ? <Loader2 className="size-4 animate-spin" /> : <Radio className="size-4" />} {active ? 'Save & go live' : 'Save'}
           </button>
         </div>
       </div>
+
+      <ConfirmDialog
+        open={confirmDisable}
+        title="Disable this line?"
+        message={`${camerasReady ? `Its ${camerasReady} camera${camerasReady === 1 ? '' : 's'} will stop: no` : 'No'} cycles, alerts or reports until you enable it again. Settings and recorded data are kept.`}
+        confirmLabel="Disable line"
+        danger
+        busy={toggling}
+        onConfirm={() => setLineActive(false)}
+        onCancel={() => setConfirmDisable(false)}
+      />
 
       <ConfirmDialog
         open={confirmDelete}

@@ -1,0 +1,744 @@
+[
+ {
+  "rail": 1,
+  "load": 1792384868.45,
+  "load_local": "10:11:08.4",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use",
+  "note": "first rail after a pause; long stand at the shelf with his back to the camera, no arm at the gun",
+  "set": "2026-10-19, camera 13 (640 recording, validation copy). Rails 10:11:08-10:20:00 (outer: pop rivet gun not used) and 10:32:26-10:50:02 (inner: riveted at the shelf by the Final Inspection person himself). Each rail checked on strips of 10 shelf frames over the look-back (previous rail out -> this load) plus the frames at load -0.4 / 0 / +0.4 / +1.0 s; load = detector time, checked by eye (rail at the fixture) to about +-0.4 s. rivet_t0 / rivet_t1 (12 rails) = right arm reaching to the gun / back from it, read frame by frame (every frame, ~0.2 s). Corrected 2026-10-19 evening on every frame: two rails added (10:18:56.8, 10:40:00.5) and the load of the rail listed at 10:40:09.5 moved to 10:40:12.6; the first version listed the old detector's rails only, so rails it had missed were not in it."
+ },
+ {
+  "rail": 2,
+  "load": 1792384916.55,
+  "load_local": "10:11:56.5",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 3,
+  "load": 1792384929.37,
+  "load_local": "10:12:09.3",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 4,
+  "load": 1792384946.59,
+  "load_local": "10:12:26.5",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 5,
+  "load": 1792384959.83,
+  "load_local": "10:12:39.8",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 6,
+  "load": 1792384975.1,
+  "load_local": "10:12:55.0",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 7,
+  "load": 1792384986.91,
+  "load_local": "10:13:06.9",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 8,
+  "load": 1792385000.82,
+  "load_local": "10:13:20.8",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 9,
+  "load": 1792385016.58,
+  "load_local": "10:13:36.5",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 10,
+  "load": 1792385028.82,
+  "load_local": "10:13:48.8",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 11,
+  "load": 1792385041.31,
+  "load_local": "10:14:01.3",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 12,
+  "load": 1792385052.54,
+  "load_local": "10:14:12.5",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 13,
+  "load": 1792385065.27,
+  "load_local": "10:14:25.2",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 14,
+  "load": 1792385079.61,
+  "load_local": "10:14:39.6",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 15,
+  "load": 1792385093.38,
+  "load_local": "10:14:53.3",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 16,
+  "load": 1792385106.4,
+  "load_local": "10:15:06.3",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 17,
+  "load": 1792385118.45,
+  "load_local": "10:15:18.4",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 18,
+  "load": 1792385131.26,
+  "load_local": "10:15:31.2",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 19,
+  "load": 1792385143.76,
+  "load_local": "10:15:43.7",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 20,
+  "load": 1792385156.89,
+  "load_local": "10:15:56.8",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 21,
+  "load": 1792385169.67,
+  "load_local": "10:16:09.6",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 22,
+  "load": 1792385184.23,
+  "load_local": "10:16:24.2",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 23,
+  "load": 1792385201.72,
+  "load_local": "10:16:41.7",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 24,
+  "load": 1792385218.64,
+  "load_local": "10:16:58.6",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 25,
+  "load": 1792385231.42,
+  "load_local": "10:17:11.4",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: covered tray on the rivet station (black / blue bag) until 10:17:37, pen mark at the shelf, no gun use"
+ },
+ {
+  "rail": 26,
+  "load": 1792385246.43,
+  "load_local": "10:17:26.4",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)",
+  "note": "a helper (white shirt) takes the covered tray off the shelf and puts an open blue tray of parts there (10:17:17-10:17:37); this rail is still outer"
+ },
+ {
+  "rail": 27,
+  "load": 1792385258.26,
+  "load_local": "10:17:38.2",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)",
+  "note": "station now clear, but the rails are still outer (no gun use) until the changeover"
+ },
+ {
+  "rail": 28,
+  "load": 1792385270.22,
+  "load_local": "10:17:50.2",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)"
+ },
+ {
+  "rail": 29,
+  "load": 1792385283.75,
+  "load_local": "10:18:03.7",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)"
+ },
+ {
+  "rail": 30,
+  "load": 1792385308.36,
+  "load_local": "10:18:28.3",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)"
+ },
+ {
+  "rail": 31,
+  "load": 1792385320.05,
+  "load_local": "10:18:40.0",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)"
+ },
+ {
+  "load": 1792385336.8,
+  "load_local": "10:18:56.8",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer period (station already cleared, rails still outer)",
+  "note": "added 2026-10-19 evening (every frame): a rail missing from the first version (which listed the old detector's rails only): rail at the fixture 10:18:56.9-10:18:58.3, a little left of the fixture area, held up and turned 10:18:59-10:19:01.7, into the tray ~10:19:03",
+  "rail": 32
+ },
+ {
+  "rail": 33,
+  "load": 1792385356.48,
+  "load_local": "10:19:16.4",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)"
+ },
+ {
+  "rail": 34,
+  "load": 1792385367.44,
+  "load_local": "10:19:27.4",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)"
+ },
+ {
+  "rail": 35,
+  "load": 1792385379.52,
+  "load_local": "10:19:39.5",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)"
+ },
+ {
+  "rail": 36,
+  "load": 1792385390.65,
+  "load_local": "10:19:50.6",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)"
+ },
+ {
+  "rail": 37,
+  "load": 1792385400.09,
+  "load_local": "10:20:00.0",
+  "rivet": false,
+  "variant": "outer",
+  "seen": "outer: no gun use (he does not stand at the gun with his arm up)",
+  "note": "last outer rail before the changeover (10:20-10:32: trial rails, visitors, recording gap 10:20:28-10:21:02); not annotated, so this cycle is marked as a stop",
+  "stop": true
+ },
+ {
+  "rail": 38,
+  "load": 1792386146.19,
+  "load_local": "10:32:26.1",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine",
+  "note": "first annotated inner rail; a helper / trainer in a dark polo stands at his left until ~10:39"
+ },
+ {
+  "rail": 39,
+  "load": 1792386218.28,
+  "load_local": "10:33:38.2",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 40,
+  "load": 1792386234.6,
+  "load_local": "10:33:54.5",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792386225.5,
+  "rivet_t1": 1792386233.5,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 41,
+  "load": 1792386257.97,
+  "load_local": "10:34:17.9",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine",
+  "note": "a visitor in a white shirt reaches into the station tray 10:34:09-10:34:16 while he rivets"
+ },
+ {
+  "rail": 42,
+  "load": 1792386366.06,
+  "load_local": "10:36:06.0",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 43,
+  "load": 1792386380.88,
+  "load_local": "10:36:20.8",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792386372.6,
+  "rivet_t1": 1792386379.5,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 44,
+  "load": 1792386461.98,
+  "load_local": "10:37:41.9",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine",
+  "note": "visitor in a white shirt behind him at the shelf"
+ },
+ {
+  "rail": 45,
+  "load": 1792386476.0,
+  "load_local": "10:37:56.0",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 46,
+  "load": 1792386541.17,
+  "load_local": "10:39:01.1",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine",
+  "note": "dark-polo helper stands at his left (hands down) while he rivets; the right person does the riveting himself"
+ },
+ {
+  "rail": 47,
+  "load": 1792386557.4,
+  "load_local": "10:39:17.4",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792386551.3,
+  "rivet_t1": 1792386556.3,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 48,
+  "load": 1792386569.53,
+  "load_local": "10:39:29.5",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 49,
+  "load": 1792386587.24,
+  "load_local": "10:39:47.2",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "load": 1792386600.5,
+  "load_local": "10:40:00.5",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: at the shelf with his back to the camera 10:39:53-10:39:59.6 (riveting)",
+  "note": "added 2026-10-19 evening (every frame): a rail missing from the first version: rail at the fixture 10:40:00.7-10:40:01.6, held up 10:40:02-10:40:03.5, into the bin 10:40:04.2; fixture motion from 10:40:01.0",
+  "rail": 50
+ },
+ {
+  "rail": 51,
+  "load": 1792386612.6,
+  "load_local": "10:40:12.6",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine",
+  "note": "load time corrected from 10:40:09.5 (the old detector's time; he was at the shelf with his back to the camera 10:40:05-10:40:12.5): turns from the shelf 10:40:12.5, rail at the fixture 10:40:12.9-10:40:14.0, fixture motion from 10:40:13.1 (correction checked on every frame, 2026-10-19 evening)"
+ },
+ {
+  "rail": 52,
+  "load": 1792386624.38,
+  "load_local": "10:40:24.3",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792386619.0,
+  "rivet_t1": 1792386623.5,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 53,
+  "load": 1792386638.94,
+  "load_local": "10:40:38.9",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 54,
+  "load": 1792386649.82,
+  "load_local": "10:40:49.8",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 55,
+  "load": 1792386664.58,
+  "load_local": "10:41:04.5",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792386657.3,
+  "rivet_t1": 1792386663.7,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 56,
+  "load": 1792386679.63,
+  "load_local": "10:41:19.6",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 57,
+  "load": 1792386694.47,
+  "load_local": "10:41:34.4",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 58,
+  "load": 1792386706.35,
+  "load_local": "10:41:46.3",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 59,
+  "load": 1792386724.59,
+  "load_local": "10:42:04.5",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792386719.3,
+  "rivet_t1": 1792386723.8,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 60,
+  "load": 1792386740.88,
+  "load_local": "10:42:20.8",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 61,
+  "load": 1792386753.5,
+  "load_local": "10:42:33.5",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 62,
+  "load": 1792386766.58,
+  "load_local": "10:42:46.5",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792386761.3,
+  "rivet_t1": 1792386765.8,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 63,
+  "load": 1792386782.75,
+  "load_local": "10:43:02.7",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 64,
+  "load": 1792386796.94,
+  "load_local": "10:43:16.9",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 65,
+  "load": 1792386813.53,
+  "load_local": "10:43:33.5",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 66,
+  "load": 1792386830.92,
+  "load_local": "10:43:50.9",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792386825.0,
+  "rivet_t1": 1792386830.4,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 67,
+  "load": 1792386845.81,
+  "load_local": "10:44:05.8",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 68,
+  "load": 1792386861.27,
+  "load_local": "10:44:21.2",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 69,
+  "load": 1792386875.59,
+  "load_local": "10:44:35.5",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 70,
+  "load": 1792386889.91,
+  "load_local": "10:44:49.9",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792386884.4,
+  "rivet_t1": 1792386889.3,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 71,
+  "load": 1792386903.94,
+  "load_local": "10:45:03.9",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 72,
+  "load": 1792386917.35,
+  "load_local": "10:45:17.3",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 73,
+  "load": 1792386976.74,
+  "load_local": "10:46:16.7",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine",
+  "note": "recording gap 10:45:35-10:46:15.9: the riveting of this rail is not in the recording; inner period"
+ },
+ {
+  "rail": 74,
+  "load": 1792386988.89,
+  "load_local": "10:46:28.8",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 75,
+  "load": 1792387003.71,
+  "load_local": "10:46:43.7",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 76,
+  "load": 1792387031.44,
+  "load_local": "10:47:11.4",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 77,
+  "load": 1792387043.83,
+  "load_local": "10:47:23.8",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792387038.7,
+  "rivet_t1": 1792387043.2,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 78,
+  "load": 1792387058.53,
+  "load_local": "10:47:38.5",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 79,
+  "load": 1792387071.9,
+  "load_local": "10:47:51.9",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 80,
+  "load": 1792387086.05,
+  "load_local": "10:48:06.0",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 81,
+  "load": 1792387101.19,
+  "load_local": "10:48:21.1",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792387094.7,
+  "rivet_t1": 1792387100.4,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 82,
+  "load": 1792387115.65,
+  "load_local": "10:48:35.6",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 83,
+  "load": 1792387130.63,
+  "load_local": "10:48:50.6",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 84,
+  "load": 1792387144.99,
+  "load_local": "10:49:04.9",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 85,
+  "load": 1792387159.74,
+  "load_local": "10:49:19.7",
+  "rivet": true,
+  "variant": "inner",
+  "rivet_t0": 1792387154.3,
+  "rivet_t1": 1792387158.6,
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 86,
+  "load": 1792387175.28,
+  "load_local": "10:49:35.2",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 87,
+  "load": 1792387188.28,
+  "load_local": "10:49:48.2",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ },
+ {
+  "rail": 88,
+  "load": 1792387202.54,
+  "load_local": "10:50:02.5",
+  "rivet": true,
+  "variant": "inner",
+  "seen": "inner: back to the camera at the shelf, right arm up at the pop rivet gun for ~4-8 s, then turns to the machine"
+ }
+]

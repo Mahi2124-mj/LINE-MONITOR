@@ -2,7 +2,7 @@
 import json, sys, time, datetime as dt
 from pathlib import Path
 import numpy as np, cv2
-REC = Path(r"C:\Users\DX-ADMIN\Pictures\LIne monitoring\backend\data\recordings")
+REC = Path(__file__).resolve().parents[2] / "data" / "recordings"
 
 def ts(hms, day="2026-10-09"):
     return time.mktime(time.strptime(f"{day} {hms}", "%Y-%m-%d %H:%M:%S"))

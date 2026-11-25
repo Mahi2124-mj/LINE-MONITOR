@@ -6,6 +6,7 @@ import threading
 
 from sqlalchemy import select
 
+from ..config import settings
 from ..database import SessionLocal
 from ..hub import live
 from .. import models
@@ -34,6 +35,13 @@ def _camera_info(c: models.Camera) -> dict:
     }
 
 
+def _share_key(info: dict) -> tuple | None:
+    """Cameras with the same source are one physical camera (several stations on it): they share one stream."""
+    if not settings.share_streams or info.get("source_type") == "simulated":
+        return None
+    return (info.get("source_type"), (info.get("source") or "").strip())
+
+
 class CameraManager:
     def __init__(self) -> None:
         self.workers: dict[int, CameraWorker] = {}
@@ -42,13 +50,13 @@ class CameraManager:
     def start_all(self) -> None:
         with SessionLocal() as db:
             ids = db.scalars(select(models.Camera.id).where(models.Camera.enabled.is_(True))).all()
-        for i, cid in enumerate(ids):
+        for i, cid in enumerate(sorted(ids)):  # lowest id first: it becomes the leader of a shared stream
             self.start(cid, initial_delay=i * 2.0)  # stagger the first connections (cameras / router dislike bursts)
         log.info("started %d camera workers", len(ids))
 
     def start(self, camera_id: int, initial_delay: float = 0.0) -> CameraWorker | None:
         with self.lock:
-            self.stop(camera_id)
+            self.stop(camera_id, promote=False)
             with SessionLocal() as db:
                 cam = db.get(models.Camera, camera_id)
                 if cam is None or not cam.enabled:
@@ -63,19 +71,40 @@ class CameraManager:
                 info = _camera_info(cam)
             for sid, s in stations.items():
                 live.ensure(sid, s.line_id)
+            key = _share_key(info)
+            leader = None
+            if key is not None:  # another station on the same physical camera already reads it: follow that one
+                leader = next((x for cid, x in sorted(self.workers.items())
+                               if cid != camera_id and not x.follow_mode and _share_key(x.info) == key), None)
             w = CameraWorker(info, stations, line_meta)
             w.initial_delay = initial_delay
+            if leader is not None:
+                w.follow_mode = True
+                leader.add_follower(w)
             self.workers[camera_id] = w
             w.start()
+            if leader is None and key is not None:  # this one reads the stream: take over the followers waiting for it
+                for cid, f in self.workers.items():
+                    if f is not w and f.follow_mode and _share_key(f.info) == key:
+                        if f.leader is not None and f.leader is not w:
+                            f.leader.remove_follower(f)
+                        w.add_follower(f)
+            if leader is not None:
+                log.info("camera %s follows camera %s (same physical camera)", camera_id, leader.camera_id)
             return w
 
-    def stop(self, camera_id: int) -> None:
+    def stop(self, camera_id: int, promote: bool = True) -> None:
         with self.lock:
             w = self.workers.pop(camera_id, None)
         if w is not None:
+            followers = list(w.followers)
             w.stop()
             w.join(timeout=5)
             live.release_camera(camera_id)
+            if promote and followers:  # the leader is gone for good: the next station on that camera reads it now
+                nxt = min(f.camera_id for f in followers)
+                log.info("camera %s stopped: camera %s now reads the shared stream", camera_id, nxt)
+                self.start(nxt)
 
     def restart(self, camera_id: int) -> CameraWorker | None:
         return self.start(camera_id)

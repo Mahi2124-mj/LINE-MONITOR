@@ -4,7 +4,7 @@ import sys
 
 # CPU threads for the pose model. Must be set before torch is imported: by default every inference
 # spins a busy-waiting thread per core, which burned ~8 cores for 7 cameras instead of ~2.5.
-_threads = os.environ.get("LM_TORCH_THREADS", "4")
+_threads = os.environ.get("LM_TORCH_THREADS", "8")  # 4 capped all cameras together at ~27 frames/s (2026-10-15)
 for _var in ("OMP_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ.setdefault(_var, _threads)
 os.environ.setdefault("OMP_WAIT_POLICY", "PASSIVE")

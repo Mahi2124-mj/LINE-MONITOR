@@ -15,6 +15,7 @@ from ..services.serializers import camera_ids_by_station, station_out
 from ..vision.manager import manager
 
 router = APIRouter(prefix="/api/stations", tags=["stations"])
+LAST_CYCLE_DAYS = 30  # the live "last cycle" of a step: an older one is not shown
 
 
 def _get(db: Session, station_id: int) -> models.Station:
@@ -120,9 +121,12 @@ def station_analytics(station_id: int, range: RangeKey = Query("24h"), db: Sessi
 def station_cycles(station_id: int, range: RangeKey = Query("24h"), limit: int = Query(50, ge=1, le=5000), db: Session = Depends(get_db)):
     _get(db, station_id)
     start, end = resolve_range(range)
-    q = (select(models.Cycle).where(models.Cycle.station_id == station_id, models.Cycle.ended_at >= start, models.Cycle.ended_at <= end)
-         .order_by(models.Cycle.ended_at.desc()).limit(limit))
-    return db.scalars(q).all()
+    q = select(models.Cycle).where(models.Cycle.station_id == station_id, models.Cycle.ended_at >= start, models.Cycle.ended_at <= end)
+    from ..services.detector_feed import feed
+
+    if feed.owns(station_id):  # counted by its validated detector: the generic cycles are not shown
+        q = q.where(models.Cycle.source != "vision")
+    return db.scalars(q.order_by(models.Cycle.ended_at.desc()).limit(limit)).all()
 
 
 @router.post("/{station_id}/cycles", response_model=CycleOut, status_code=201)
@@ -145,13 +149,23 @@ def add_manual_cycle(station_id: int, data: ManualCycleIn, db: Session = Depends
 
 def today_stats(db: Session) -> dict[int, tuple[int, float, float | None]]:
     """station_id -> (count today, sum cycle sec, last cycle sec) for the live registry."""
+    from ..services.detector_feed import feed
+
     start = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
     C = models.Cycle
+    # steps counted by their validated detector: their generic cycles do not count (see services/detector_feed.py)
+    counted = ~((C.source == "vision") & C.station_id.in_(sorted(feed.owned))) if feed.owned else C.id.isnot(None)
+    # Both queries seek the (station_id, ended_at) index per step. Without station_id in the condition SQLite read the
+    # whole cycles table (450k+ rows, on a hard disk) at every server start: over a minute before the page opened.
+    ids = list(db.scalars(select(models.Station.id)))
     out: dict[int, tuple[int, float, float | None]] = {}
-    for sid, cnt, total in db.execute(select(C.station_id, func.count(C.id), func.sum(C.cycle_sec)).where(C.ended_at >= start).group_by(C.station_id)):
+    for sid, cnt, total in db.execute(select(C.station_id, func.count(C.id), func.sum(C.cycle_sec))
+                                      .where(C.station_id.in_(ids), C.ended_at >= start, counted).group_by(C.station_id)):
         out[sid] = (int(cnt), float(total or 0), None)
-    sub = select(C.station_id, func.max(C.ended_at).label("m")).group_by(C.station_id).subquery()
-    for sid, cyc in db.execute(select(C.station_id, C.cycle_sec).join(sub, (C.station_id == sub.c.station_id) & (C.ended_at == sub.c.m))):
-        cnt, total, _ = out.get(sid, (0, 0.0, None))
-        out[sid] = (cnt, total, float(cyc))
+    since = start - timedelta(days=LAST_CYCLE_DAYS)
+    for sid in ids:
+        cyc = db.scalar(select(C.cycle_sec).where(C.station_id == sid, C.ended_at >= since, counted).order_by(C.ended_at.desc()).limit(1))
+        if cyc is not None:
+            cnt, total, _ = out.get(sid, (0, 0.0, None))
+            out[sid] = (cnt, total, float(cyc))
     return out

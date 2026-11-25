@@ -21,11 +21,25 @@ import type {
   ReportStatus,
   Overview,
   RangeKey,
+  Shifts,
   Station,
   StationAnalytics,
   StationInput,
   StationLive,
   Track,
+  Severity,
+  LineReport,
+  StationReport,
+  OperatorsReport,
+  VariationReport,
+  MovementReport,
+  MachineAnalysisOverview,
+  MachineAnalysis,
+  MachineCycleDetail,
+  MachineWindow,
+  ShiftMovementReport,
+  ShiftMovementRow,
+  ShiftMovementStatus,
 } from './types';
 
 // In dev, Vite proxies /api and /ws to the backend (see vite.config.ts).
@@ -63,8 +77,15 @@ const qs = (params: Record<string, string | number | undefined | null>) => {
   return p.length ? '?' + p.map(([k, v]) => `${k}=${encodeURIComponent(String(v))}`).join('&') : '';
 };
 
+export interface AlertFilter {
+  severity?: Severity;
+  group?: 'bottleneck';
+}
+export type AlertCounts = Record<Severity | 'all' | 'bottleneck', number>;
+
 export const api = {
   health: () => request<Health>('GET', '/api/health'),
+  shifts: () => request<Shifts>('GET', '/api/shifts'),
   overview: (range: RangeKey) => request<Overview>('GET', `/api/overview${qs({ range })}`),
   live: () => request<StationLive[]>('GET', '/api/live'),
 
@@ -111,10 +132,37 @@ export const api = {
   // Movement / waste analysis
   movement: (range: RangeKey, lineId?: number) => request<MovementRow[]>('GET', `/api/movement${qs({ range, line_id: lineId })}`),
 
+  // Line reports (Reports pages): start / end are local ISO times without zone ("2026-10-19T08:30")
+  lineReport: (lineId: number, start: string, end?: string) => request<LineReport>('GET', `/api/line-report/${lineId}${qs({ start, end })}`),
+  stationReport: (stationId: number, start: string, end?: string) =>
+    request<StationReport>('GET', `/api/line-report/station/${stationId}${qs({ start, end })}`),
+  operatorsReport: (lineId: number, start: string, end?: string) =>
+    request<OperatorsReport>('GET', `/api/line-report/${lineId}/operators${qs({ start, end })}`),
+  variationReport: (lineId: number, start: string, end?: string) =>
+    request<VariationReport>('GET', `/api/line-report/${lineId}/variation${qs({ start, end })}`),
+  movementReport: (lineId: number, start: string, end?: string) =>
+    request<MovementReport>('GET', `/api/line-report/${lineId}/movement${qs({ start, end })}`),
+  // Cycle analysis per machine, from the checked step detectors
+  machineAnalysisOverview: (start: string, end?: string) => request<MachineAnalysisOverview>('GET', `/api/machine-analysis${qs({ start, end })}`),
+  machineAnalysis: (stationId: number, start: string, end?: string) =>
+    request<MachineAnalysis>('GET', `/api/machine-analysis/station/${stationId}${qs({ start, end })}`),
+  machineCycle: (cycleId: number) => request<MachineCycleDetail>('GET', `/api/machine-analysis/cycle/${cycleId}`),
+  machineCycleClipUrl: (cycleId: number) => `/api/machine-analysis/cycle/${cycleId}/clip.webm`,
+  machineWindow: (stationId: number, start: number | null, sec: number) =>
+    request<MachineWindow>('GET', `/api/machine-analysis/station/${stationId}/window?sec=${sec}${start !== null ? `&start=${start.toFixed(1)}` : ''}`),
+  machineWindowClipUrl: (stationId: number, start: number, sec: number) =>
+    `/api/machine-analysis/station/${stationId}/window.webm?start=${start.toFixed(1)}&sec=${sec}`,
+  setMachineMaster: (cycleId: number) => request<{ ok: boolean }>('POST', `/api/machine-analysis/cycle/${cycleId}/master`),
+  clearMachineMaster: (stationId: number) => request<{ ok: boolean }>('DELETE', `/api/machine-analysis/station/${stationId}/master`),
+  recordedFrameUrl: (cameraId: number, t: number) => `/api/line-report/frame/${cameraId}.jpg?t=${t}`,
+
   // Alerts
-  alerts: (status: 'open' | 'all' = 'open', limit = 100) => request<Alert[]>('GET', `/api/alerts${qs({ status, limit })}`),
+  // filter = one card of the Alerts page: a severity (without bottleneck alerts) or the bottleneck alerts
+  alerts: (status: 'open' | 'all' = 'open', limit = 100, filter: AlertFilter = {}) =>
+    request<Alert[]>('GET', `/api/alerts${qs({ status, limit, ...filter })}`),
+  alertCounts: () => request<AlertCounts>('GET', '/api/alerts/counts'),
   ackAlert: (id: number) => request<Alert>('POST', `/api/alerts/${id}/ack`),
-  ackAllAlerts: () => request<{ acknowledged: number }>('POST', '/api/alerts/ack-all'),
+  ackAllAlerts: (filter: AlertFilter = {}) => request<{ acknowledged: number }>('POST', `/api/alerts/ack-all${qs({ ...filter })}`),
 
   // Simple setup: check a camera address, save a whole line (steps + cameras) and go live
   probeCamera: (address: string, username = '', password = '') =>
@@ -147,6 +195,12 @@ export const api = {
   reportStatus: () => request<ReportStatus>('GET', '/api/reports/status'),
   generateReport: (cameraId: number) => request<ReportStatus>('POST', `/api/reports/generate/${cameraId}`),
   reportUrl: (name: string) => `${BASE}/api/reports/${encodeURIComponent(name)}/`,
+  shiftMovementReports: () => request<ShiftMovementRow[]>('GET', '/api/movement-reports'),
+  shiftMovementReport: (id: string) => request<ShiftMovementReport>('GET', `/api/movement-reports/${encodeURIComponent(id)}`),
+  shiftMovementStatus: () => request<ShiftMovementStatus>('GET', '/api/movement-reports/status'),
+  generateShiftMovement: (shift: 'A' | 'B', which: 'current' | 'last') =>
+    request<ShiftMovementStatus>('POST', `/api/movement-reports/generate?shift=${shift}&which=${which}`),
+  shiftMovementFileUrl: (id: string, name: string) => `${BASE}/api/movement-reports/${encodeURIComponent(id)}/${name}`,
 
   // Export / system
   exportCyclesUrl: (range: RangeKey, lineId?: number, stationId?: number) =>

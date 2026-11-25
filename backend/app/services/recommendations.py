@@ -91,9 +91,8 @@ def for_station(la: "LineAnalytics", station_id: int) -> list[Recommendation]:
                                              "(pick → assemble → place) and both hands work simultaneously."))
 
     wait = mv.wait_pct or 0.0
-    bn = next((x for x in la.stations if x.is_bottleneck), None)
     if wait >= 25 and not s.is_bottleneck:
-        why = f" It is paced by the bottleneck {_name(bn)}." if bn else ""
+        why = f" It is paced by the bottleneck {la.bottleneck_label}." if la.bottleneck_label else ""
         out.append(Recommendation(id=f"waiting-{sid}", line_id=lid, station_id=sid, category="waiting", severity="info",
                                   title=f"{_name(s)} waits {wait:.0f}% of the time",
                                   detail=f"Average wait {st.avg_wait or 0:.1f}s per cycle.{why} Use this spare capacity: take over work elements from the "
@@ -105,45 +104,45 @@ def for_line(la: "LineAnalytics") -> list[Recommendation]:
     out: list[Recommendation] = []
     lid = la.line.id
     takt = la.line.takt_time_sec
-    data = [s for s in la.stations if s.stats.count >= 3 and s.stats.avg_content]
-    bn = next((s for s in la.stations if s.is_bottleneck), None)
+    # balancing is per person: one operator may run several steps (see analytics.operator_groups)
+    data = [o for o in la.operators if o.per_part_sec]
+    bn = next((o for o in data if o.is_bottleneck), None)
 
-    if bn and bn.stats.avg_content:
-        c = bn.stats.avg_content
-        # receiver with the most slack, preferring direct neighbours
-        others = [s for s in data if s.station.id != bn.station.id]
-        neigh = [s for s in others if abs(s.station.sequence - bn.station.sequence) == 1]
+    if bn and bn.per_part_sec:
+        c = bn.per_part_sec
+        # receiver with the most slack, preferring the people next to him on the line
+        others = [o for o in data if o is not bn]
+        neigh = [o for o in others if min(abs(a - b) for a in o.sequences for b in bn.sequences) == 1]
         pool = neigh or others
-        recv = max(pool, key=lambda s: takt - (s.stats.avg_content or 0), default=None)
+        recv = max(pool, key=lambda o: takt - (o.per_part_sec or 0), default=None)
         if c > takt:
             excess = c - takt
-            move = ""
-            if recv and recv.stats.avg_content and recv.stats.avg_content < takt:
-                slack = takt - recv.stats.avg_content
-                move = (f" Move ~{min(excess, slack):.1f}s of work to {_name(recv)} which needs only {recv.stats.avg_content:.1f}s "
-                        f"({slack:.1f}s spare), and/or remove the {bn.stats.avg_motion_waste or 0:.1f}s motion waste per cycle at the bottleneck.")
+            if recv and recv.per_part_sec and recv.per_part_sec < takt:
+                slack = takt - recv.per_part_sec
+                move = (f" Move ~{min(excess, slack):.1f}s of work to {recv.label}, who needs only {recv.per_part_sec:.1f}s "
+                        f"({slack:.1f}s spare), and/or remove the {bn.motion_sec or 0:.1f}s motion waste per part at the bottleneck.")
             else:
-                move = f" Remove the {bn.stats.avg_motion_waste or 0:.1f}s of motion waste per cycle, simplify the method or add a second operator."
-            out.append(Recommendation(id=f"balancing-bn-{lid}", line_id=lid, station_id=bn.station.id, category="balancing", severity="critical",
-                                      title=f"Bottleneck: {_name(bn)} needs {c:.1f}s > takt {takt:.0f}s",
-                                      detail=f"This step limits the line to {la.capacity_per_hour or 0:.0f} units/hr while demand needs {3600 / takt:.0f}/hr." + move,
+                move = f" Remove the {bn.motion_sec or 0:.1f}s of motion waste per part, simplify the method or add a second operator."
+            out.append(Recommendation(id=f"balancing-bn-{lid}", line_id=lid, station_id=la.bottleneck_station_id, category="balancing",
+                                      severity="critical", title=f"Bottleneck: {bn.label} needs {c:.1f}s per part > takt {takt:.1f}s",
+                                      detail=f"This limits the line to {la.capacity_per_hour or 0:.0f} units/hr while demand needs {3600 / takt:.0f}/hr." + move,
                                       est_saving_sec=round(excess, 1)))
         else:
-            out.append(Recommendation(id=f"balancing-bn-{lid}", line_id=lid, station_id=bn.station.id, category="balancing", severity="info",
-                                      title=f"Slowest step: {_name(bn)} at {c:.1f}s ({c / takt * 100:.0f}% of takt)",
-                                      detail="The line meets takt. Any improvement at this step directly raises line capacity; improvements elsewhere only add idle time."))
+            out.append(Recommendation(id=f"balancing-bn-{lid}", line_id=lid, station_id=la.bottleneck_station_id, category="balancing",
+                                      severity="info", title=f"Slowest operator: {bn.label} at {c:.1f}s per part ({c / takt * 100:.0f}% of takt)",
+                                      detail="The line meets takt. Any improvement here directly raises line capacity; improvements elsewhere only add idle time."))
 
     if la.balance_efficiency_pct is not None and la.balance_efficiency_pct < 85 and len(data) > 1:
-        total = sum(s.stats.avg_content or 0 for s in data)
+        total = sum(o.per_part_sec or 0 for o in data)
         ideal = total / len(data)
-        heavy = [f"Step {s.station.sequence}" for s in data if (s.stats.avg_content or 0) > ideal * 1.1]
-        light = [f"Step {s.station.sequence}" for s in data if (s.stats.avg_content or 0) < ideal * 0.9]
+        heavy = [o.label for o in data if (o.per_part_sec or 0) > ideal * 1.1]
+        light = [o.label for o in data if (o.per_part_sec or 0) < ideal * 0.9]
         out.append(Recommendation(id=f"balancing-eff-{lid}", line_id=lid, category="balancing",
                                   severity="warning" if la.balance_efficiency_pct < 75 else "info",
                                   title=f"Line balance efficiency {la.balance_efficiency_pct:.0f}% (target ≥ 85%)",
-                                  detail=f"Total work content {total:.0f}s over {len(data)} steps → {ideal:.1f}s per step if perfectly balanced. "
-                                         f"Overloaded: {', '.join(heavy) or '–'}. Underloaded: {', '.join(light) or '–'}. Shift work elements from overloaded to underloaded steps "
-                                         f"(use the Yamazumi chart)."))
+                                  detail=f"Total work content {total:.0f}s per part over {len(data)} operators → {ideal:.1f}s each if perfectly balanced. "
+                                         f"Overloaded: {', '.join(heavy) or '–'}. Underloaded: {', '.join(light) or '–'}. Shift work elements from "
+                                         f"overloaded to underloaded operators (use the Yamazumi chart)."))
 
     station_recs = [r for s in la.stations for r in for_station(la, s.station.id)]
     out += station_recs

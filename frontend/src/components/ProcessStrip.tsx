@@ -19,7 +19,7 @@ export function ProcessStrip({ stations, live }: ProcessStripProps) {
         const st = STATE_STYLE[state];
         const over = s.avg_content_sec !== null && s.avg_content_sec > s.target_cycle_sec; // content vs target
         return (
-          <div key={s.id} className="flex min-w-0 flex-1 items-center gap-0.5">
+          <div key={s.id} className="flex min-w-[76px] flex-1 items-center gap-0.5 lg:min-w-0">
             <div
               className={`relative flex h-11 min-w-0 flex-1 flex-col justify-center rounded-md border px-1.5 ${st.block} ${
                 s.is_bottleneck ? 'outline-2 outline-offset-1 outline-red-500' : ''

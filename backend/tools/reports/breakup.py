@@ -7,7 +7,7 @@ import numpy as np, cv2, rec
 a, b, out = sys.argv[1], sys.argv[2], Path(sys.argv[3])
 out.mkdir(parents=True, exist_ok=True)
 t0, t1 = rec.ts(a), rec.ts(b)
-db = sqlite3.connect(r"file:C:\Users\DX-ADMIN\Pictures\LIne monitoring\backend\data\line_monitor.db?mode=ro", uri=True)
+db = sqlite3.connect(f"file:{Path(__file__).resolve().parents[2] / 'data' / 'line_monitor.db'}?mode=ro", uri=True)
 fixture = [np.array(z["points"], np.float32) for z in json.loads(db.execute("select zones from cameras where id=3").fetchone()[0]) if z["type"] == "part_zone"][0]
 idx = rec.index(3, t0, t1)
 

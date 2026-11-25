@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import threading
+import time
 from pathlib import Path
 
 import cv2
@@ -12,6 +13,7 @@ from ..config import settings
 from ..vision.recorder import list_segments
 
 OUT_FPS = 6
+KEEP_SEC = 24 * 3600  # cut clips are deleted after a day (the recordings they come from are kept 12 h)
 _lock = threading.Lock()  # one encode at a time (CPU)
 
 
@@ -63,12 +65,13 @@ def _frames(camera_id: int, t0: float, t1: float):
         cap.release()
 
 
-def cycle_clip(camera_id: int, t0: float, t1: float, labels: list[tuple[float, float, str, str]] | None = None) -> Path | None:
+def cycle_clip(camera_id: int, t0: float, t1: float, labels: list[tuple[float, float, str, str]] | None = None,
+               tag: str = "") -> Path | None:
     """WebM of [t0, t1] at a constant frame rate (real time), with elapsed time and current element burnt in.
-    labels: (start, end, name, hex colour) relative to t0. Cached on disk."""
+    labels: (start, end, name, hex colour) relative to t0. Cached on disk (tag: a new name when the labels changed)."""
     out_dir = settings.clips_dir / f"cam_{camera_id}"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out = out_dir / f"{int(t0 * 1000)}_{int(t1 * 1000)}.webm"
+    out = out_dir / f"{int(t0 * 1000)}_{int(t1 * 1000)}{'_' + tag if tag else ''}.webm"
     if out.exists() and out.stat().st_size > 0:
         return out
     with _lock:
@@ -108,6 +111,13 @@ def cycle_clip(camera_id: int, t0: float, t1: float, labels: list[tuple[float, f
             writer.write(frame)
         writer.release()
         tmp.replace(out)
+        old = time.time() - KEEP_SEC
+        for f in out_dir.glob("*.webm"):
+            try:
+                if f.stat().st_mtime < old:
+                    f.unlink()
+            except OSError:
+                pass
         return out
 
 

@@ -17,8 +17,10 @@ const CameraDetailPage = lazy(() => import('./pages/CameraDetailPage'));
 const ZoneEditorPage = lazy(() => import('./pages/ZoneEditorPage'));
 const AnalysisIndexPage = lazy(() => import('./pages/AnalysisIndexPage'));
 const AnalysisPage = lazy(() => import('./pages/AnalysisPage'));
+const MachineAnalysisPage = lazy(() => import('./pages/MachineAnalysisPage'));
 const AlertsPage = lazy(() => import('./pages/AlertsPage'));
 const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const LineReportsPage = lazy(() => import('./pages/LineReportsPage'));
 const ReportViewPage = lazy(() => import('./pages/ReportViewPage'));
 const SetupPage = lazy(() => import('./pages/SetupPage'));
 const AdvancedSetupPage = lazy(() => import('./pages/AdvancedSetupPage'));
@@ -49,10 +51,17 @@ export default function App() {
                 <Route path="cameras" element={<Lazy el={<CamerasPage />} />} />
                 <Route path="cameras/:id" element={<Lazy el={<CameraDetailPage />} />} />
                 <Route path="cameras/:id/zones" element={<Lazy el={<ZoneEditorPage />} />} />
-                <Route path="analysis" element={<Lazy el={<AnalysisIndexPage />} />} />
+                <Route path="analysis" element={<Lazy el={<MachineAnalysisPage />} />} />
+                <Route path="analysis/step/:stationId" element={<Lazy el={<MachineAnalysisPage />} />} />
+                <Route path="analysis/cameras" element={<Lazy el={<AnalysisIndexPage />} />} />
                 <Route path="analysis/:cameraId" element={<Lazy el={<AnalysisPage />} />} />
                 <Route path="alerts" element={<Lazy el={<AlertsPage />} />} />
-                <Route path="reports" element={<Lazy el={<ReportsPage />} />} />
+                <Route path="reports" element={<Lazy el={<LineReportsPage view="line" />} />} />
+                <Route path="reports/step" element={<Lazy el={<LineReportsPage view="step" />} />} />
+                <Route path="reports/step/:stationId" element={<Lazy el={<LineReportsPage view="step" />} />} />
+                <Route path="reports/operators" element={<Lazy el={<LineReportsPage view="operators" />} />} />
+                <Route path="reports/variation" element={<Lazy el={<LineReportsPage view="variation" />} />} />
+                <Route path="reports/saved" element={<Lazy el={<ReportsPage />} />} />
                 <Route path="reports/:name" element={<Lazy el={<ReportViewPage />} />} />
                 <Route path="setup" element={<Lazy el={<SetupPage />} />} />
                 <Route path="setup/advanced" element={<Lazy el={<AdvancedSetupPage />} />} />

@@ -157,3 +157,9 @@ export function pct(part: number | null | undefined, whole: number | null | unde
   if (!isNum(part) || !isNum(whole) || whole <= 0) return null;
   return (part / whole) * 100;
 }
+
+/** a line's short name: the first word of its name ("YRA SEAT SLIDER" -> "YRA"), else its code */
+export function lineTag(line: { name: string; code?: string }): string {
+  const first = (line.name.trim().split(/\s+/)[0] ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+  return first.slice(0, 6) || line.code || '?';
+}

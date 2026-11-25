@@ -1,0 +1,313 @@
+[
+ {
+  "rail": 1,
+  "load": 1792381143.86,
+  "load_local": "09:09:03.9",
+  "rivet": false,
+  "variant": "outer",
+  "set": "2026-10-19, camera 13 (640 recording, validation copy), morning OUTER rails (pop rivet gun not used; the rivet station is covered). Layout 09:09:00-09:11:15: grey box in front of him with an orange grid tray at the bottom edge of the picture; from 09:11:40: a large orange grid tray right in front of him (the old rules counted 18 of 44 rails in 09:10-09:20). Every rail read on contact sheets of the right person every 0.5 s (09:09:00-09:19:00, no gaps): load = both hands put the rail into the lower fixture of the Final Inspection machine; the time is the start of the fixture-area image motion - 0.5 s where that run lies within 1 s of the frame read (all 43), so about +-0.3 s. Not counted: the rail swung out of the fixture into the tray, hands at the shelf, and the layout change."
+ },
+ {
+  "rail": 2,
+  "load": 1792381161.85,
+  "load_local": "09:09:21.8",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 3,
+  "load": 1792381186.44,
+  "load_local": "09:09:46.4",
+  "rivet": false,
+  "variant": "outer",
+  "note": "waited ~10 s facing the middle person before it (09:09:30-09:09:39)"
+ },
+ {
+  "rail": 4,
+  "load": 1792381215.71,
+  "load_local": "09:10:15.7",
+  "rivet": false,
+  "variant": "outer",
+  "note": "~19 s at the shelf with his back to the camera before it (09:09:56-09:10:15)"
+ },
+ {
+  "rail": 5,
+  "load": 1792381234.74,
+  "load_local": "09:10:34.7",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 6,
+  "load": 1792381244.65,
+  "load_local": "09:10:44.7",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 7,
+  "load": 1792381254.51,
+  "load_local": "09:10:54.5",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 8,
+  "load": 1792381266.04,
+  "load_local": "09:11:06.0",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 9,
+  "load": 1792381320.06,
+  "load_local": "09:12:00.1",
+  "rivet": false,
+  "variant": "outer",
+  "note": "first rail after the layout change: the grey box with the tray at the bottom edge was taken away and a large orange grid tray put in front of him (09:11:15-09:11:40; he was away 09:11:14-09:11:43); arms up at the shelf 09:11:44-09:11:59 (rivet station covered, no gun use)"
+ },
+ {
+  "rail": 10,
+  "load": 1792381328.45,
+  "load_local": "09:12:08.4",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 11,
+  "load": 1792381338.78,
+  "load_local": "09:12:18.8",
+  "rivet": false,
+  "variant": "outer",
+  "note": "faint fixture motion (peak 0.24); the old rules missed it"
+ },
+ {
+  "rail": 12,
+  "load": 1792381349.2,
+  "load_local": "09:12:29.2",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 13,
+  "load": 1792381358.3,
+  "load_local": "09:12:38.3",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 14,
+  "load": 1792381367.85,
+  "load_local": "09:12:47.9",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 15,
+  "load": 1792381378.72,
+  "load_local": "09:12:58.7",
+  "rivet": false,
+  "variant": "outer",
+  "note": "long in-hand check (to 09:13:07)"
+ },
+ {
+  "rail": 16,
+  "load": 1792381393.19,
+  "load_local": "09:13:13.2",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 17,
+  "load": 1792381402.99,
+  "load_local": "09:13:22.0",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 18,
+  "load": 1792381412.93,
+  "load_local": "09:13:32.9",
+  "rivet": false,
+  "variant": "outer",
+  "note": "rail laid flat on the tray and marked there (09:13:38-09:13:46), then stood into a cell (09:13:47)"
+ },
+ {
+  "rail": 19,
+  "load": 1792381431.25,
+  "load_local": "09:13:51.3",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 20,
+  "load": 1792381440.58,
+  "load_local": "09:14:00.6",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 21,
+  "load": 1792381449.82,
+  "load_local": "09:14:09.8",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 22,
+  "load": 1792381462.78,
+  "load_local": "09:14:22.8",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 23,
+  "load": 1792381476.21,
+  "load_local": "09:14:36.2",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 24,
+  "load": 1792381489.72,
+  "load_local": "09:14:49.7",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 25,
+  "load": 1792381500.4,
+  "load_local": "09:15:00.4",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 26,
+  "load": 1792381512.18,
+  "load_local": "09:15:12.2",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 27,
+  "load": 1792381522.85,
+  "load_local": "09:15:22.9",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 28,
+  "load": 1792381534.01,
+  "load_local": "09:15:34.0",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 29,
+  "load": 1792381545.64,
+  "load_local": "09:15:45.6",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 30,
+  "load": 1792381558.34,
+  "load_local": "09:15:58.3",
+  "rivet": false,
+  "variant": "outer",
+  "note": "faint fixture motion (peak 0.25)"
+ },
+ {
+  "rail": 31,
+  "load": 1792381570.16,
+  "load_local": "09:16:10.2",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 32,
+  "load": 1792381593.39,
+  "load_local": "09:16:33.4",
+  "rivet": false,
+  "variant": "outer",
+  "note": "waited ~15 s for the next rail before it (holder empty; the middle person released at 09:16:32)"
+ },
+ {
+  "rail": 33,
+  "load": 1792381607.61,
+  "load_local": "09:16:47.6",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 34,
+  "load": 1792381617.32,
+  "load_local": "09:16:57.3",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 35,
+  "load": 1792381629.08,
+  "load_local": "09:17:09.1",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 36,
+  "load": 1792381641.0,
+  "load_local": "09:17:21.0",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 37,
+  "load": 1792381652.66,
+  "load_local": "09:17:32.7",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 38,
+  "load": 1792381672.1,
+  "load_local": "09:17:52.1",
+  "rivet": false,
+  "variant": "outer",
+  "note": "facing the middle person 09:17:39-09:17:43 (no rail), then at the shelf 09:17:43-09:17:51"
+ },
+ {
+  "rail": 39,
+  "load": 1792381687.63,
+  "load_local": "09:18:07.6",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 40,
+  "load": 1792381698.55,
+  "load_local": "09:18:18.6",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 41,
+  "load": 1792381709.81,
+  "load_local": "09:18:29.8",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 42,
+  "load": 1792381722.44,
+  "load_local": "09:18:42.4",
+  "rivet": false,
+  "variant": "outer"
+ },
+ {
+  "rail": 43,
+  "load": 1792381736.0,
+  "load_local": "09:18:55.0",
+  "rivet": false,
+  "variant": "outer"
+ }
+]

@@ -1,0 +1,178 @@
+[
+ {
+  "rail": 1,
+  "take": null,
+  "mark": null,
+  "load": 1792011651.4,
+  "out": 1792011652.8,
+  "tray": 1792011655.0,
+  "tray_end": 1792011656.0,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 2,
+  "take": null,
+  "mark": null,
+  "load": 1792011667.0,
+  "out": 1792011668.6,
+  "tray": 1792011670.7,
+  "tray_end": 1792011671.9,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 3,
+  "take": null,
+  "mark": null,
+  "load": 1792011674.0,
+  "out": 1792011674.9,
+  "tray": 1792011677.3,
+  "tray_end": 1792011678.6,
+  "back": null,
+  "note": "second rail right after the first one (no wait between)"
+ },
+ {
+  "rail": 4,
+  "take": null,
+  "mark": null,
+  "load": null,
+  "out": 1792011700.9,
+  "tray": 1792011704.8,
+  "tray_end": 1792011706.4,
+  "back": null,
+  "note": "rail put into the lower fixture at 31:26.2, then he waits with his hands down ~8 s"
+ },
+ {
+  "rail": 5,
+  "take": null,
+  "mark": null,
+  "load": 1792011706.9,
+  "out": 1792011707.6,
+  "tray": 1792011710.2,
+  "tray_end": 1792011712.3,
+  "back": null,
+  "note": "second rail right after the first one"
+ },
+ {
+  "rail": 6,
+  "take": null,
+  "mark": null,
+  "load": 1792011724.9,
+  "out": 1792011726.3,
+  "tray": 1792011728.9,
+  "tray_end": 1792011730.0,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 7,
+  "take": null,
+  "mark": null,
+  "load": null,
+  "out": 1792011739.0,
+  "tray": 1792011741.9,
+  "tray_end": 1792011742.9,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 8,
+  "take": null,
+  "mark": null,
+  "load": 1792011753.5,
+  "out": 1792011755.1,
+  "tray": 1792011757.4,
+  "tray_end": 1792011758.4,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 9,
+  "take": null,
+  "mark": null,
+  "load": 1792011767.3,
+  "out": 1792011768.9,
+  "tray": 1792011771.2,
+  "tray_end": 1792011772.5,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 10,
+  "take": null,
+  "mark": null,
+  "load": 1792011779.4,
+  "out": 1792011780.7,
+  "tray": 1792011783.0,
+  "tray_end": 1792011784.6,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 11,
+  "take": null,
+  "mark": null,
+  "load": 1792011793.1,
+  "out": 1792011794.4,
+  "tray": 1792011797.1,
+  "tray_end": 1792011798.7,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 12,
+  "take": null,
+  "mark": null,
+  "load": 1792011799.4,
+  "out": 1792011800.7,
+  "tray": 1792011803.3,
+  "tray_end": 1792011804.9,
+  "back": null,
+  "note": "second rail right after the first one"
+ },
+ {
+  "rail": 13,
+  "take": null,
+  "mark": null,
+  "load": null,
+  "out": 1792011821.7,
+  "tray": 1792011824.3,
+  "tray_end": 1792011826.3,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 14,
+  "take": null,
+  "mark": null,
+  "load": null,
+  "out": 1792011841.0,
+  "tray": 1792011843.6,
+  "tray_end": 1792011845.0,
+  "back": null,
+  "note": ""
+ },
+ {
+  "rail": 15,
+  "take": null,
+  "mark": null,
+  "load": 1792011845.9,
+  "out": 1792011846.7,
+  "tray": 1792011849.7,
+  "tray_end": 1792011850.6,
+  "back": null,
+  "note": "second rail right after the first one; then reaches to the grey container at the right"
+ },
+ {
+  "rail": 16,
+  "take": null,
+  "mark": null,
+  "load": null,
+  "out": 1792011881.0,
+  "tray": 1792011883.9,
+  "tray_end": 1792011885.9,
+  "back": null,
+  "note": "after ~30 s without a rail (the middle person had a long cycle)"
+ }
+]

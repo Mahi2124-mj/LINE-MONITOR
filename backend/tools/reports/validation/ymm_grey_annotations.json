@@ -1,0 +1,137 @@
+[
+ {
+  "cycle": 1,
+  "pick_rail": 1792011652.8,
+  "start": 1792011652.8,
+  "end": 1792011672.6,
+  "drop_seen": false,
+  "cycle_sec": 19.8,
+  "note": "long cycle: the left person brings the next rail only at 31:10.5"
+ },
+ {
+  "cycle": 2,
+  "pick_rail": 1792011672.6,
+  "start": 1792011672.6,
+  "end": 1792011684.9,
+  "drop_seen": false,
+  "cycle_sec": 12.3,
+  "note": ""
+ },
+ {
+  "cycle": 3,
+  "pick_rail": 1792011684.9,
+  "start": 1792011684.9,
+  "end": 1792011698.7,
+  "drop_seen": false,
+  "cycle_sec": 13.8,
+  "note": ""
+ },
+ {
+  "cycle": 4,
+  "pick_rail": 1792011698.7,
+  "start": 1792011698.7,
+  "end": 1792011712.0,
+  "drop_seen": false,
+  "cycle_sec": 13.3,
+  "note": ""
+ },
+ {
+  "cycle": 5,
+  "pick_rail": 1792011712.0,
+  "start": 1792011712.0,
+  "end": 1792011724.5,
+  "drop_seen": false,
+  "cycle_sec": 12.5,
+  "note": ""
+ },
+ {
+  "cycle": 6,
+  "pick_rail": 1792011724.5,
+  "start": 1792011724.5,
+  "end": 1792011738.4,
+  "drop_seen": false,
+  "cycle_sec": 13.9,
+  "note": ""
+ },
+ {
+  "cycle": 7,
+  "pick_rail": 1792011738.4,
+  "start": 1792011738.4,
+  "end": 1792011752.0,
+  "drop_seen": false,
+  "cycle_sec": 13.6,
+  "note": ""
+ },
+ {
+  "cycle": 8,
+  "pick_rail": 1792011752.0,
+  "start": 1792011752.0,
+  "end": 1792011765.4,
+  "drop_seen": false,
+  "cycle_sec": 13.4,
+  "note": ""
+ },
+ {
+  "cycle": 9,
+  "pick_rail": 1792011765.4,
+  "start": 1792011765.4,
+  "end": 1792011778.6,
+  "drop_seen": false,
+  "cycle_sec": 13.2,
+  "note": ""
+ },
+ {
+  "cycle": 10,
+  "pick_rail": 1792011778.6,
+  "start": 1792011778.6,
+  "end": 1792011791.8,
+  "drop_seen": false,
+  "cycle_sec": 13.2,
+  "note": ""
+ },
+ {
+  "cycle": 11,
+  "pick_rail": 1792011791.8,
+  "start": 1792011791.8,
+  "end": 1792011805.6,
+  "drop_seen": false,
+  "cycle_sec": 13.8,
+  "note": "second reach to the holder at 33:12.6"
+ },
+ {
+  "cycle": 12,
+  "pick_rail": 1792011805.6,
+  "start": 1792011805.6,
+  "end": 1792011819.0,
+  "drop_seen": false,
+  "cycle_sec": 13.4,
+  "note": ""
+ },
+ {
+  "cycle": 13,
+  "pick_rail": 1792011819.0,
+  "start": 1792011819.0,
+  "end": 1792011847.0,
+  "drop_seen": false,
+  "cycle_sec": 28.0,
+  "note": "long cycle: both arms raised 34:05.7-34:06.4, hand-over 34:07.0"
+ },
+ {
+  "cycle": 14,
+  "pick_rail": 1792011847.0,
+  "start": 1792011847.0,
+  "end": 1792011862.2,
+  "drop_seen": false,
+  "cycle_sec": 15.2,
+  "note": ""
+ },
+ {
+  "cycle": 15,
+  "pick_rail": 1792011862.2,
+  "start": 1792011862.2,
+  "end": 1792011876.6,
+  "drop_seen": false,
+  "cycle_sec": 14.4,
+  "note": ""
+ }
+]

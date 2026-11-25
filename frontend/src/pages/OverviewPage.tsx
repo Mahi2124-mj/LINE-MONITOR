@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Bell, Cctv, Factory, Flame, Gauge, PackageCheck, Scale, Settings2, Timer } from 'lucide-react';
 import { api } from '../api/client';
-import type { OverviewLine } from '../api/types';
+import type { OverviewLine, RangeKey, ShiftResult } from '../api/types';
 import { EmptyState, ErrorState, SkeletonPanel, SkeletonTiles, StaleBanner } from '../components/EmptyState';
 import { KpiTile, TONE_TEXT } from '../components/KpiTile';
 import { ProcessStrip } from '../components/ProcessStrip';
@@ -50,7 +50,7 @@ export default function OverviewPage() {
           suffix={`/ ${fmtNum(t.planned_output)} planned`}
           progress={attain ?? 0}
           progressTone={attainmentTone(attain)}
-          sub={attain === null ? 'No plan in range' : `${fmtPct(attain)} of plan`}
+          sub={`${attain === null ? 'No plan in range' : `${fmtPct(attain)} of plan`}${t.output_outside_plan ? ` · +${fmtNum(t.output_outside_plan)} outside planned time` : ''}`}
           size="lg"
         />
         <KpiTile label="Lines" icon={<Factory className="size-4" />} value={fmtNum(t.lines)} suffix={`· ${fmtNum(t.stations)} stations`} sub="Production lines monitored" size="lg" />
@@ -90,7 +90,7 @@ export default function OverviewPage() {
           />
         </div>
       ) : (
-        <div className="grid gap-4 2xl:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 2xl:grid-cols-2">
           {data.lines.map((l) => (
             <LineCard key={l.line.id} item={l} />
           ))}
@@ -100,11 +100,40 @@ export default function OverviewPage() {
   );
 }
 
+/** "Shift A" / "Shift B" */
+function shiftTitle(s: ShiftResult): string {
+  return `Shift ${s.name}`;
+}
+
 function LineCard({ item }: { item: OverviewLine }) {
   const { states } = useLiveStates();
   const { line } = item;
-  const attain = pct(item.output, item.planned_output);
-  const paceTone = limitTone(item.line_pace_sec, line.takt_time_sec);
+  // output per shift (the newest run first) when the line has shifts in its time slots, else for the range of the top bar
+  const { range } = useRange();
+  const pickedShift = range === 'shiftA' ? 'A' : range === 'shiftB' ? 'B' : null; // a shift picked in the top bar comes first
+  const [cur, ...other] = [...(item.shifts ?? [])].sort((x, y) => Number(y.name === pickedShift) - Number(x.name === pickedShift));
+  const out = cur ? cur.output : item.output;
+  const plan = cur ? cur.planned_output : item.planned_output;
+  const attain = pct(out, plan);
+  // pace, balance, bottleneck and the steps of that shift as well (not mixed with the other shift)
+  const shiftKey: RangeKey | null = cur && range !== 'shiftA' && range !== 'shiftB' ? (cur.name === 'B' ? 'shiftB' : 'shiftA') : null;
+  const sa = usePolling(() => (shiftKey ? api.lineAnalytics(line.id, shiftKey) : Promise.resolve(null)), [line.id, shiftKey], 60_000).data;
+  const pace = sa ? sa.line_pace_sec : item.line_pace_sec;
+  const balance = sa ? sa.balance_efficiency_pct : item.balance_efficiency_pct;
+  const bnLabel = sa ? sa.bottleneck_label : item.bottleneck_station_name;
+  const steps: OverviewLine['stations'] = sa
+    ? sa.stations.map((s) => ({
+        id: s.station.id,
+        name: s.station.name,
+        sequence: s.station.sequence,
+        avg_sec: s.stats.avg,
+        avg_content_sec: s.stats.avg_content,
+        target_cycle_sec: s.station.target_cycle_sec,
+        state: s.live?.state ?? 'no_camera',
+        is_bottleneck: s.is_bottleneck,
+      }))
+    : item.stations;
+  const paceTone = limitTone(pace, line.takt_time_sec);
 
   // live state counts for the header
   const counts = new Map<StationState, number>();
@@ -122,8 +151,7 @@ function LineCard({ item }: { item: OverviewLine }) {
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <h2 className="truncate text-base font-semibold text-ink group-hover:text-sky-300">{line.name}</h2>
-            <span className="rounded bg-panel-3 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-ink-2">{line.code}</span>
-            {!line.is_active && <span className="rounded bg-zinc-700/50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-300">INACTIVE</span>}
+            {!line.is_active && <span className="rounded bg-zinc-700/50 px-1.5 py-0.5 text-[10px] font-semibold text-zinc-300">DISABLED</span>}
           </div>
           <div className="mt-0.5 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-ink-3">
             {[...counts.entries()].map(([st, n]) => (
@@ -144,34 +172,49 @@ function LineCard({ item }: { item: OverviewLine }) {
       <div className="mt-3 grid grid-cols-2 gap-x-4 gap-y-3 sm:grid-cols-4">
         <div className="col-span-2">
           <div className="flex items-baseline justify-between text-[11px] font-semibold uppercase tracking-wider text-ink-3">
-            <span>Output</span>
+            <span>{cur ? `Output · ${shiftTitle(cur)}` : 'Output'}</span>
             <span className="normal-case tracking-normal tabular-nums">{fmtPct(attain)}</span>
           </div>
           <div className="mt-0.5 flex items-baseline gap-1.5">
-            <span className={`text-2xl font-semibold tabular-nums ${TONE_TEXT[attainmentTone(attain)]}`}>{fmtNum(item.output)}</span>
-            <span className="text-sm text-ink-3 tabular-nums">/ {fmtNum(item.planned_output)}</span>
+            <span className={`text-2xl font-semibold tabular-nums ${TONE_TEXT[attainmentTone(attain)]}`}>{fmtNum(out)}</span>
+            <span className="text-sm text-ink-3 tabular-nums">/ {fmtNum(plan)}</span>
+            {!cur && !!item.output_outside_plan && (
+              <span className="ml-auto text-[11px] text-ink-3 tabular-nums" title="Parts made outside the planned time slots (night shift, overtime): not counted against the plan">
+                +{fmtNum(item.output_outside_plan)} outside planned time
+              </span>
+            )}
           </div>
           <ProgressBar value={attain ?? 0} tone={attainmentTone(attain)} className="mt-1" />
+          {other.map((s) => (
+            <div key={s.name} className="mt-1.5 flex items-baseline justify-between gap-2 text-xs text-ink-3 tabular-nums">
+              <span>{shiftTitle(s)}</span>
+              <span>
+                <span className={TONE_TEXT[attainmentTone(pct(s.output, s.planned_output))]}>{fmtNum(s.output)}</span> / {fmtNum(s.planned_output)} ·{' '}
+                {fmtPct(pct(s.output, s.planned_output))}
+              </span>
+            </div>
+          ))}
         </div>
         <Metric icon={<Timer className="size-3.5" />} label="Takt" value={fmtSec(line.takt_time_sec)} />
         <Metric
           icon={<Gauge className="size-3.5" />}
           label="Line pace"
-          value={fmtSec(item.line_pace_sec)}
+          value={fmtSec(pace)}
           tone={TONE_TEXT[paceTone]}
           title="Bottleneck operator content = effective line cycle time"
         />
-        <Metric icon={<Scale className="size-3.5" />} label="Balance" value={fmtPct(item.balance_efficiency_pct)} tone={TONE_TEXT[balanceTone(item.balance_efficiency_pct)]} />
+        <Metric icon={<Scale className="size-3.5" />} label="Balance" value={fmtPct(balance)} tone={TONE_TEXT[balanceTone(balance)]} />
         <div className="col-span-1 sm:col-span-3">
           <div className="flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wider text-ink-3">
             <Flame className="size-3.5" /> Bottleneck
           </div>
-          <div className={`mt-0.5 truncate text-sm font-semibold ${item.bottleneck_station_name ? 'text-red-300' : 'text-ink-3'}`}>{item.bottleneck_station_name ?? '—'}</div>
+          <div className={`mt-0.5 truncate text-sm font-semibold ${bnLabel ? 'text-red-300' : 'text-ink-3'}`}>{bnLabel ?? '—'}</div>
         </div>
       </div>
 
-      <div className="mt-4">
-        <ProcessStrip stations={item.stations} live={states} />
+      {/* scrolls sideways on a phone; the padding keeps the bottleneck's red outline inside the scroll box */}
+      <div className="-mx-1 mt-3 overflow-x-auto p-1">
+        <ProcessStrip stations={steps} live={states} />
       </div>
     </Link>
   );

@@ -1,9 +1,12 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { api } from '../api/client';
 import type { RangeKey } from '../api/types';
 import { readStorage, writeStorage } from '../lib/storage';
 
 export const RANGE_OPTIONS: { key: RangeKey; label: string; title: string }[] = [
   { key: '1h', label: '1h', title: 'Last hour' },
+  { key: 'shiftA', label: 'Shift A', title: 'Shift A' },
+  { key: 'shiftB', label: 'Shift B', title: 'Shift B' },
   { key: 'today', label: 'Today', title: 'Since midnight' },
   { key: '24h', label: '24h', title: 'Last 24 hours' },
   { key: '7d', label: '7d', title: 'Last 7 days' },
@@ -21,6 +24,7 @@ interface RangeCtx {
   range: RangeKey;
   setRange: (r: RangeKey) => void;
   rangeTitle: string;
+  options: typeof RANGE_OPTIONS; // Shift A / B only when the lines have shifts (and the server knows them)
 }
 
 const Ctx = createContext<RangeCtx | null>(null);
@@ -36,9 +40,19 @@ export function RangeProvider({ children }: { children: ReactNode }) {
     writeStorage(STORAGE_KEY, r);
   }, []);
 
+  const [shifts, setShifts] = useState<boolean | null>(null);
+  useEffect(() => {
+    api
+      .shifts()
+      .then((d) => setShifts(!!(d.A || d.B)))
+      .catch(() => setShifts(false));
+  }, []);
+  const options = useMemo(() => RANGE_OPTIONS.filter((o) => shifts || (o.key !== 'shiftA' && o.key !== 'shiftB')), [shifts]);
+  const shown = shifts === false && (range === 'shiftA' || range === 'shiftB') ? DEFAULT_RANGE : range;
+
   const value = useMemo<RangeCtx>(
-    () => ({ range, setRange, rangeTitle: RANGE_OPTIONS.find((o) => o.key === range)?.title ?? range }),
-    [range, setRange],
+    () => ({ range: shown, setRange, rangeTitle: RANGE_OPTIONS.find((o) => o.key === shown)?.title ?? shown, options }),
+    [shown, setRange, options],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

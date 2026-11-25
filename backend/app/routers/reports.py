@@ -58,8 +58,10 @@ def list_reports():
 
 @router.get("/status")
 def status():
-    """Automatic reports: which camera is being done now, queue, last result per camera."""
-    return engine.status()
+    """Automatic reports: which camera is being done now, queue, last result per camera; and the live detector feed."""
+    from ..services.detector_feed import feed
+
+    return {**engine.status(), "detector_feed": feed.status()}
 
 
 @router.post("/generate/{camera_id}", status_code=202)

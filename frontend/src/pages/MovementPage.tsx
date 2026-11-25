@@ -5,7 +5,9 @@ import { Bar, BarChart, CartesianGrid, Rectangle, ResponsiveContainer, Tooltip, 
 import { api } from '../api/client';
 import type { MovementRow } from '../api/types';
 import { EmptyState, ErrorState, SkeletonPanel, StaleBanner } from '../components/EmptyState';
+import { OperatorMovement } from '../components/OperatorMovement';
 import { Panel } from '../components/Panel';
+import { ShiftMovementReport } from '../components/ShiftMovementReport';
 import { AXIS_PROPS, TooltipBox } from '../components/charts/ChartTooltip';
 import { usePageTitle } from '../context/PageTitleContext';
 import { useRange } from '../context/RangeContext';
@@ -28,8 +30,36 @@ const SORTERS: Record<SortKey, (r: MovementRow) => number | string> = {
   picks: (r) => (r.movement.avg_pick_count ?? 0) - r.movement.expected_picks,
 };
 
+const VIEWS = [
+  { view: 'shift', label: 'Shift movement report' },
+  { view: 'steps', label: 'All steps (live)' },
+] as const;
+
 export default function MovementPage() {
   usePageTitle('Movement & waste');
+  const [params, setParams] = useSearchParams();
+  const view = params.get('view') === 'steps' ? 'steps' : 'shift';
+  return (
+    <div className="space-y-4">
+      <div className="flex w-fit flex-wrap gap-1 rounded-lg border border-edge bg-panel p-1">
+        {VIEWS.map((v) => (
+          <button
+            type="button"
+            key={v.view}
+            onClick={() => setParams(v.view === 'steps' ? { view: 'steps' } : {}, { replace: true })}
+            className={`rounded-md px-3 py-1.5 text-sm transition ${v.view === view ? 'bg-sky-500/15 font-semibold text-sky-300' : 'text-ink-2 hover:text-ink'}`}
+          >
+            {v.label}
+          </button>
+        ))}
+      </div>
+      {view === 'shift' ? <ShiftMovementReport /> : <MovementSteps />}
+    </div>
+  );
+}
+
+/** the steps' work / motion / wait split of the top-bar range (the live counters and the step detectors) */
+function MovementSteps() {
   const { range, rangeTitle } = useRange();
   const [params, setParams] = useSearchParams();
   const lineId = params.get('line') ? Number(params.get('line')) : undefined;
@@ -66,6 +96,9 @@ export default function MovementPage() {
   );
 
   const totalSaving = (rows.data ?? []).reduce((s, r) => s + (r.movement.est_saving_sec ?? 0), 0);
+  // hand / walk tracking of the generic counter: only steps without a checked step detector still have it
+  const tracked = (rows.data ?? []).filter((r) => r.movement.avg_hand_travel_m !== null || r.movement.avg_walk_m !== null);
+  const shownLines = (lines.data ?? []).filter((l) => l.is_active && (lineId === undefined || l.id === lineId));
 
   const header = (key: SortKey, label: string, right = true) => (
     <th className={right ? 'text-right!' : ''}>
@@ -84,7 +117,7 @@ export default function MovementPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="max-w-3xl text-sm text-ink-2">
-          Every step ranked by how much time could be saved per cycle by removing unnecessary motion · {rangeTitle}.
+          Where operators walk, carry and wait instead of working, per person and per part · {rangeTitle}.
         </p>
         <label className="flex items-center gap-2 text-sm text-ink-2">
           Line
@@ -93,7 +126,7 @@ export default function MovementPage() {
             value={lineId ?? ''}
             onChange={(e) => {
               const v = e.target.value;
-              setParams(v ? { line: v } : {}, { replace: true });
+              setParams(v ? { view: 'steps', line: v } : { view: 'steps' }, { replace: true });
             }}
           >
             <option value="">All lines</option>
@@ -108,7 +141,11 @@ export default function MovementPage() {
 
       <StaleBanner error={rows.data ? rows.error : null} />
 
-      {!rows.data && rows.loading ? (
+      {shownLines.map((l) => (
+        <OperatorMovement key={l.id} line={l} range={range} rangeTitle={rangeTitle} />
+      ))}
+
+      {rows.data && tracked.length === 0 ? null : !rows.data && rows.loading ? (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
           <SkeletonPanel className="h-80" />
           <SkeletonPanel className="h-80" />

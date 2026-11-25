@@ -1,5 +1,5 @@
-import { useState, type ReactNode } from 'react';
-import { Link, NavLink, Outlet } from 'react-router-dom';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   Bell,
   ChevronRight,
@@ -9,8 +9,6 @@ import {
   Footprints,
   LayoutDashboard,
   ListVideo,
-  PanelLeftClose,
-  PanelLeftOpen,
   Settings2,
   Video,
   VideoOff,
@@ -22,8 +20,7 @@ import { useLiveVideo } from '../lib/liveVideo';
 import { useLive, useLiveStates } from '../context/LiveContext';
 import { usePageTitleValue } from '../context/PageTitleContext';
 import { usePolling } from '../hooks/usePolling';
-import { useMediaQuery } from '../hooks/useMediaQuery';
-import { readStorage, writeStorage } from '../lib/storage';
+import { lineTag } from '../lib/format';
 import { RangeSelector } from './RangeSelector';
 import { StateDot } from './StateBadge';
 import type { StationState } from '../api/types';
@@ -38,22 +35,47 @@ const NAV: { to: string; label: string; icon: ReactNode; end?: boolean }[] = [
   { to: '/setup', label: 'Lines & cameras', icon: <Settings2 className="size-[18px]" /> },
 ];
 
-const COLLAPSE_KEY = 'lm.sidebar.collapsed';
-
 export function Layout() {
-  const narrow = useMediaQuery('(max-width: 1023px)');
-  const [userCollapsed, setUserCollapsed] = useState(() => readStorage(COLLAPSE_KEY) === '1');
-  const collapsed = narrow || userCollapsed;
-
-  const toggle = () => {
-    const v = !userCollapsed;
-    setUserCollapsed(v);
-    writeStorage(COLLAPSE_KEY, v ? '1' : '0');
+  // the sidebar is an icon rail; the Line Monitor icon opens the full menu and the page moves right with it (on a phone
+  // the menu opens over the page instead, and closes when a page is picked). With the mouse over the rail the full menu
+  // opens the same way until the mouse leaves.
+  const [open, setOpen] = useState(false);
+  const [peek, setPeek] = useState(false);
+  const peekTimer = useRef<number | undefined>(undefined);
+  const hover = (e: ReactPointerEvent, on: boolean) => {
+    if (e.pointerType !== 'mouse') return; // a tap is a click
+    window.clearTimeout(peekTimer.current);
+    peekTimer.current = window.setTimeout(() => setPeek(on), on ? 120 : 250); // not for a mouse just passing by
   };
+  useEffect(() => () => window.clearTimeout(peekTimer.current), []);
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 639px)').matches) setOpen(false);
+  }, [pathname]);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open]);
 
   return (
     <div className="flex h-full min-h-0">
-      <Sidebar collapsed={collapsed} canToggle={!narrow} onToggle={toggle} />
+      <div
+        className={`relative shrink-0 transition-[width] duration-200 ${open || peek ? 'w-[60px] sm:w-[240px]' : 'w-[60px]'}`}
+        onPointerEnter={(e) => hover(e, true)}
+        onPointerLeave={(e) => hover(e, false)}
+      >
+        <Sidebar
+          collapsed={!open && !peek}
+          onToggle={() => {
+            window.clearTimeout(peekTimer.current);
+            setPeek(false);
+            setOpen((v) => !v);
+          }}
+        />
+      </div>
+      {open && <div className="fixed inset-0 z-30 bg-black/50 backdrop-blur-[1px] sm:hidden" onClick={() => setOpen(false)} aria-hidden />}
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />
         <main className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
@@ -66,7 +88,7 @@ export function Layout() {
   );
 }
 
-function Sidebar({ collapsed, canToggle, onToggle }: { collapsed: boolean; canToggle: boolean; onToggle: () => void }) {
+function Sidebar({ collapsed, onToggle }: { collapsed: boolean; onToggle: () => void }) {
   const { openAlerts } = useLive();
   const { data: lines } = usePolling(() => api.lines(), [], 60_000);
   const { states } = useLiveStates();
@@ -89,10 +111,18 @@ function Sidebar({ collapsed, canToggle, onToggle }: { collapsed: boolean; canTo
 
   return (
     <aside
-      className={`flex shrink-0 flex-col border-r border-edge bg-panel transition-[width] duration-200 ${collapsed ? 'w-[60px]' : 'w-[228px]'}`}
+      className={`absolute inset-y-0 left-0 z-40 flex flex-col overflow-hidden border-r border-edge bg-panel transition-[width] duration-200 ${
+        collapsed ? 'w-[60px]' : 'w-[240px] max-sm:shadow-2xl max-sm:shadow-black/60'
+      }`}
       aria-label="Main navigation"
     >
-      <Link to="/" className={`flex h-14 items-center gap-2.5 border-b border-edge ${collapsed ? 'justify-center px-0' : 'px-4'}`}>
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={!collapsed}
+        title={collapsed ? 'Open menu' : 'Close menu'}
+        className={`flex h-14 shrink-0 items-center gap-2.5 border-b border-edge text-left hover:bg-panel-2 ${collapsed ? 'justify-center px-0' : 'px-4'}`}
+      >
         <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-gradient-to-br from-emerald-500/30 to-sky-500/20 ring-1 ring-emerald-500/40">
           <Factory className="size-[18px] text-emerald-300" />
         </span>
@@ -102,7 +132,7 @@ function Sidebar({ collapsed, canToggle, onToggle }: { collapsed: boolean; canTo
             <span className="block truncate text-[11px] text-ink-3">Assembly vision analytics</span>
           </span>
         )}
-      </Link>
+      </button>
 
       <nav className="flex min-h-0 flex-1 flex-col gap-1 overflow-y-auto p-2">
         {NAV.slice(0, 1).map((n) => (
@@ -128,11 +158,11 @@ function Sidebar({ collapsed, canToggle, onToggle }: { collapsed: boolean; canTo
                       isActive ? 'bg-panel-3 text-ink ring-1 ring-edge-2' : 'text-ink-2 hover:bg-panel-2 hover:text-ink'
                     } ${collapsed ? 'justify-center' : ''} ${l.is_active ? '' : 'opacity-60'}`
                   }
-                  title={`${l.name} (${l.code})`}
+                  title={l.name}
                 >
                   {collapsed ? (
-                    <span className="relative grid size-7 place-items-center rounded-md bg-panel-3 text-[10px] font-bold text-ink-2">
-                      {l.code.slice(0, 3)}
+                    <span className="relative grid h-7 min-w-7 place-items-center rounded-md bg-panel-3 px-1 text-[10px] font-bold text-ink-2">
+                      {lineTag(l).slice(0, 4)}
                       {st && (
                         <span className="absolute -top-0.5 -right-0.5">
                           <StateDot state={st} />
@@ -143,7 +173,6 @@ function Sidebar({ collapsed, canToggle, onToggle }: { collapsed: boolean; canTo
                     <>
                       {st ? <StateDot state={st} /> : <span className="size-2 rounded-full bg-panel-3" />}
                       <span className="min-w-0 flex-1 truncate">{l.name}</span>
-                      <span className="text-[10px] font-semibold text-ink-3">{l.code}</span>
                     </>
                   )}
                 </NavLink>
@@ -169,18 +198,6 @@ function Sidebar({ collapsed, canToggle, onToggle }: { collapsed: boolean; canTo
           </NavLink>
         ))}
       </nav>
-
-      {canToggle && (
-        <button
-          type="button"
-          onClick={onToggle}
-          className={`m-2 flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs text-ink-3 hover:bg-panel-2 hover:text-ink ${collapsed ? 'justify-center' : ''}`}
-          title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-        >
-          {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-          {!collapsed && 'Collapse'}
-        </button>
-      )}
     </aside>
   );
 }
@@ -190,10 +207,10 @@ function TopBar() {
   const { connected, retries, openAlerts } = useLive();
   const [videoOn, setVideoOn] = useLiveVideo();
   return (
-    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-edge bg-panel/80 px-4 backdrop-blur lg:px-5">
+    <header className="flex min-h-14 shrink-0 flex-wrap items-center gap-x-3 gap-y-2 border-b border-edge bg-panel/80 px-3 py-2 backdrop-blur sm:flex-nowrap sm:px-4 sm:py-0 lg:px-5">
       <div className="flex min-w-0 flex-1 items-center gap-1.5">
         {crumbs.map((c, i) => (
-          <span key={i} className="flex min-w-0 shrink items-center gap-1.5 text-sm text-ink-3">
+          <span key={i} className="hidden min-w-0 shrink items-center gap-1.5 text-sm text-ink-3 md:flex">
             {c.to ? (
               <Link to={c.to} className="truncate hover:text-ink">
                 {c.label}
@@ -206,7 +223,7 @@ function TopBar() {
         ))}
         <h1 className="truncate text-base font-semibold tracking-wide text-ink">{title}</h1>
       </div>
-      <RangeSelector className="shrink-0" />
+      <RangeSelector className="order-last w-full justify-between sm:order-none sm:w-auto sm:shrink-0" />
       <button
         type="button"
         role="switch"

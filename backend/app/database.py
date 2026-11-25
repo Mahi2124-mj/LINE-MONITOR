@@ -58,3 +58,19 @@ def init_db() -> None:
     from . import models  # noqa: F401  (register tables)
 
     Base.metadata.create_all(engine)
+    _add_missing_columns()
+
+
+# columns added after the first release: create_all() does not alter existing tables
+_NEW_COLUMNS = {"stations": {"parallel_group": "VARCHAR(40) NOT NULL DEFAULT ''"},
+                "lines": {"slot_plan": "JSON NOT NULL DEFAULT '[]'", "off_days": "JSON NOT NULL DEFAULT '[]'"},
+                "cycles": {"elements": "JSON"}}
+
+
+def _add_missing_columns() -> None:
+    with engine.begin() as conn:
+        for table, cols in _NEW_COLUMNS.items():
+            have = {r[1] for r in conn.exec_driver_sql(f"PRAGMA table_info({table})")}
+            for name, ddl in cols.items():
+                if name not in have:
+                    conn.exec_driver_sql(f"ALTER TABLE {table} ADD COLUMN {name} {ddl}")

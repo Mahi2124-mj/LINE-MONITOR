@@ -15,7 +15,7 @@ export default function ReportViewPage() {
   return (
     <div className="flex h-[calc(100vh-7rem)] min-h-[480px] flex-col gap-3">
       <div className="flex flex-wrap items-center gap-2">
-        <Link to="/reports" className="btn btn-sm">
+        <Link to="/reports/saved" className="btn btn-sm">
           <ArrowLeft className="size-3.5" /> All reports
         </Link>
         <a href={url} target="_blank" rel="noreferrer" className="btn btn-sm">

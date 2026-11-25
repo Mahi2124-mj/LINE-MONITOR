@@ -9,6 +9,7 @@ import { EmptyState } from '../EmptyState';
 interface Row {
   t: number;
   hour: string;
+  label: string | null; // the line's time slot ("08:30-09:30") when it has a slot plan
   output: number;
   planned: number;
 }
@@ -19,13 +20,15 @@ const OK = '#38bdf8';
 /** Units per bucket (bars) vs plan (step line). Buckets are hourly (<= 48h ranges) or daily (7d/30d). Bars below plan are rose. */
 export const HourlyOutputChart = memo(function HourlyOutputChart({ hourly, height = 240 }: { hourly: HourlyOutput[]; height?: number }) {
   const data = useMemo<Row[]>(
-    () => hourly.map((h) => ({ t: parseTs(h.hour)?.getTime() ?? 0, hour: h.hour, output: h.output, planned: h.planned })),
+    () => hourly.map((h) => ({ t: parseTs(h.hour)?.getTime() ?? 0, hour: h.hour, label: h.label ?? null, output: h.output, planned: h.planned })),
     [hourly],
   );
   const kind = useMemo(() => bucketKind(hourly.map((h) => h.hour)), [hourly]);
   if (!data.length) return <EmptyState compact title="No output in this range" />;
   const span = data.length > 1 ? data[data.length - 1].t - data[0].t : 0;
-  const unit = kind === 'day' ? 'units / day' : 'units / h';
+  const slots = data.some((d) => d.label);
+  const unit = kind === 'day' ? 'units / day' : slots ? 'units / slot' : 'units / h';
+  const labelOf = new Map(data.map((d) => [d.hour, d.label]));
 
   return (
     <div>
@@ -41,7 +44,7 @@ export const HourlyOutputChart = memo(function HourlyOutputChart({ hourly, heigh
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={data} margin={{ top: 8, right: 12, bottom: 0, left: 0 }} barCategoryGap="18%">
             <CartesianGrid vertical={false} stroke={CHART.grid} />
-            <XAxis dataKey="hour" {...AXIS_PROPS} minTickGap={24} tickFormatter={(v: string) => fmtBucketTick(v, kind, span)} />
+            <XAxis dataKey="hour" {...AXIS_PROPS} minTickGap={slots ? 4 : 24} tickFormatter={(v: string) => labelOf.get(v) ?? fmtBucketTick(v, kind, span)} />
             <YAxis
               {...AXIS_PROPS}
               width={48}
@@ -56,7 +59,7 @@ export const HourlyOutputChart = memo(function HourlyOutputChart({ hourly, heigh
                 const diff = r.output - r.planned;
                 return (
                   <TooltipBox
-                    title={fmtBucketTitle(r.hour, kind)}
+                    title={r.label ?? fmtBucketTitle(r.hour, kind)}
                     rows={[
                       { label: 'Output', value: `${fmtNum(r.output)} units`, color: r.output >= r.planned ? OK : BELOW, emphasis: true },
                       { label: 'Planned', value: `${fmtNum(r.planned)} units`, color: CHART.planned, dashed: true },

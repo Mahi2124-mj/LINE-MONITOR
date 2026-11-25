@@ -6,7 +6,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import StreamingResponse
-from sqlalchemy import delete, select, update
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
 from .. import models
@@ -14,7 +14,7 @@ from ..config import settings
 from ..database import get_db
 from ..hub import hub, live
 from ..schemas import AlertOut, Health, MovementRow, Overview, RangeKey, StationLive
-from ..services.analytics import compute_movement_rows, compute_overview, resolve_range
+from ..services.analytics import compute_movement_rows, compute_overview, resolve_range, shift_window
 from ..vision.manager import manager
 from ..vision.trackers import PoseModel
 from .stations import today_stats
@@ -26,6 +26,17 @@ router = APIRouter(tags=["dashboard"])
 def health():
     return Health(version=settings.version, demo_mode=settings.demo_mode, pose_available=PoseModel.available(),
                   cameras_running=manager.running_count(), server_time=datetime.now())
+
+
+@router.get("/api/shifts")
+def shifts():
+    """the newest run of each shift (A = morning, B = night) over the active lines' time slots, for the pages that ask
+    for a start and end time; null when no line has that shift"""
+    out = {}
+    for name in ("A", "B"):
+        w = shift_window(name)
+        out[name] = {"start": w[0].isoformat(timespec="seconds"), "end": w[1].isoformat(timespec="seconds")} if w else None
+    return out
 
 
 @router.get("/api/overview", response_model=Overview, response_model_by_alias=True)
@@ -46,17 +57,46 @@ def movement(range: RangeKey = Query("24h"), line_id: int | None = None, db: Ses
 
 
 # ------------------------------------------------------------------ alerts
+# alerts about the line's bottleneck have their own card on the Alerts page (not counted under their severity)
+BOTTLENECK_TYPES = ("bottleneck", "over_takt")
+SEVERITY_Q = Query(None, pattern="^(critical|warning|info)$")
+GROUP_Q = Query(None, pattern="^bottleneck$")
+
+
+def _alert_filter(q, severity: str | None, group: str | None):
+    A = models.Alert
+    if group == "bottleneck":
+        return q.where(A.type.in_(BOTTLENECK_TYPES))
+    if severity:
+        return q.where(A.severity == severity, A.type.not_in(BOTTLENECK_TYPES))
+    return q
+
+
 @router.get("/api/alerts", response_model=list[AlertOut])
-def alerts(status: str = Query("open", pattern="^(open|all)$"), limit: int = Query(100, ge=1, le=1000), db: Session = Depends(get_db)):
-    q = select(models.Alert).order_by(models.Alert.created_at.desc()).limit(limit)
+def alerts(status: str = Query("open", pattern="^(open|all)$"), limit: int = Query(100, ge=1, le=1000),
+           severity: str | None = SEVERITY_Q, group: str | None = GROUP_Q, db: Session = Depends(get_db)):
+    q = _alert_filter(select(models.Alert), severity, group).order_by(models.Alert.created_at.desc()).limit(limit)
     if status == "open":
         q = q.where(models.Alert.acknowledged.is_(False))
     return db.scalars(q).all()
 
 
+@router.get("/api/alerts/counts")
+def alert_counts(db: Session = Depends(get_db)):
+    """open alerts per card of the Alerts page: all, per severity (without bottleneck alerts), bottleneck"""
+    A = models.Alert
+    out = {"all": 0, "critical": 0, "warning": 0, "info": 0, "bottleneck": 0}
+    for sev, typ, n in db.execute(select(A.severity, A.type, func.count(A.id)).where(A.acknowledged.is_(False)).group_by(A.severity, A.type)):
+        out["all"] += n
+        out["bottleneck" if typ in BOTTLENECK_TYPES else sev] = out.get("bottleneck" if typ in BOTTLENECK_TYPES else sev, 0) + n
+    return out
+
+
 @router.post("/api/alerts/ack-all")
-def ack_all(db: Session = Depends(get_db)):
-    res = db.execute(update(models.Alert).where(models.Alert.acknowledged.is_(False)).values(acknowledged=True, acknowledged_at=datetime.now()))
+def ack_all(severity: str | None = SEVERITY_Q, group: str | None = GROUP_Q, db: Session = Depends(get_db)):
+    """acknowledge every open alert, or only those of one card (severity / bottleneck)"""
+    q = _alert_filter(update(models.Alert).where(models.Alert.acknowledged.is_(False)), severity, group)
+    res = db.execute(q.values(acknowledged=True, acknowledged_at=datetime.now()))
     db.commit()
     return {"acknowledged": res.rowcount or 0}
 

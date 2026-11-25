@@ -54,6 +54,9 @@ function CameraView({ camera, setCamera, error, stations }: { camera: Camera; se
   const [busy, setBusy] = useState<string | null>(null);
   const status = { ...camera.status, ...(cameraStatus.get(camera.id) ?? {}) };
   const station = stations.find((s) => s.id === camera.station_id);
+  // the step of this camera is counted by its checked step detector: the settings here only drive the live timer
+  const feed = usePolling(() => api.reportStatus(), [], 60_000);
+  const checked = camera.station_id !== null && !!feed.data?.detector_feed?.owned_stations.includes(camera.station_id);
 
   const run = async (key: string, fn: () => Promise<Camera>, ok: string) => {
     setBusy(key);
@@ -71,6 +74,13 @@ function CameraView({ camera, setCamera, error, stations }: { camera: Camera; se
   return (
     <div className="space-y-4">
       <StaleBanner error={error} />
+      {checked && (
+        <div className="rounded-lg border border-sky-500/30 bg-sky-500/10 px-4 py-2.5 text-sm text-sky-100">
+          The cycles of {station ? `step ${station.sequence} (${station.name})` : 'this step'} are counted by its checked step detector, from this
+          camera's recording. The zones and detection settings below only drive the live timer and the working / idle indicator: changing them does
+          not change any count, report or cycle analysis.
+        </div>
+      )}
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_360px]">
         <Panel
           title="Live view"

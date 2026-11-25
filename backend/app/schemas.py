@@ -1,7 +1,7 @@
 """Pydantic schemas. Keep in sync with frontend/src/api/types.ts."""
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import date, datetime
 from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -11,7 +11,7 @@ CycleMethod = Literal["part_presence", "trigger_zone", "activity"]
 SourceType = Literal["rtsp", "http", "usb", "file", "simulated"]
 TrackerType = Literal["auto", "pose", "motion", "simulated"]
 Severity = Literal["info", "warning", "critical"]
-RangeKey = Literal["1h", "today", "24h", "7d", "30d"]
+RangeKey = Literal["1h", "shiftA", "shiftB", "today", "24h", "7d", "30d"]
 
 
 class ORM(BaseModel):
@@ -19,6 +19,26 @@ class ORM(BaseModel):
 
 
 # ---------------------------------------------------------------- lines
+def _check_hhmm(v: str) -> str:
+    h, m = v.split(":")
+    if not (0 <= int(h) <= 23 and 0 <= int(m) <= 59):
+        raise ValueError("time must be HH:MM")
+    return f"{int(h):02d}:{int(m):02d}"
+
+
+class SlotPlan(BaseModel):
+    """Planned output of one time slot of the day (breaks are inside the slots: a slot with a break has a lower plan)."""
+    start: str
+    end: str
+    plan: int = Field(ge=0)
+    shift: Optional[str] = Field(None, max_length=12)  # "A", "B"; empty: from the gaps between the slots
+
+    @field_validator("start", "end")
+    @classmethod
+    def _hhmm(cls, v: str) -> str:
+        return _check_hhmm(v)
+
+
 class LineIn(BaseModel):
     name: str = Field(min_length=1, max_length=120)
     code: str = ""
@@ -26,6 +46,8 @@ class LineIn(BaseModel):
     takt_time_sec: float = Field(60.0, gt=0)
     shift_start: str = "08:00"
     shift_end: str = "20:00"
+    slot_plan: list[SlotPlan] = []
+    off_days: list[date] = []
     is_active: bool = True
 
     @field_validator("shift_start", "shift_end")
@@ -44,6 +66,8 @@ class LineUpdate(BaseModel):
     takt_time_sec: Optional[float] = Field(None, gt=0)
     shift_start: Optional[str] = None
     shift_end: Optional[str] = None
+    slot_plan: Optional[list[SlotPlan]] = None
+    off_days: Optional[list[date]] = None
     is_active: Optional[bool] = None
 
 
@@ -55,6 +79,8 @@ class LineOut(ORM):
     takt_time_sec: float
     shift_start: str
     shift_end: str
+    slot_plan: list[SlotPlan] = []
+    off_days: list[date] = []
     is_active: bool
     created_at: datetime
     station_count: int = 0
@@ -71,6 +97,7 @@ class StationIn(BaseModel):
     target_cycle_sec: float = Field(60.0, gt=0)
     expected_picks: int = Field(2, ge=0)
     operator_name: str = ""
+    parallel_group: str = Field("", max_length=40)
     is_active: bool = True
     sequence: Optional[int] = None
 
@@ -83,6 +110,7 @@ class StationUpdate(BaseModel):
     target_cycle_sec: Optional[float] = Field(None, gt=0)
     expected_picks: Optional[int] = Field(None, ge=0)
     operator_name: Optional[str] = None
+    parallel_group: Optional[str] = Field(None, max_length=40)
     is_active: Optional[bool] = None
     sequence: Optional[int] = None
 
@@ -98,6 +126,7 @@ class StationOut(ORM):
     target_cycle_sec: float
     expected_picks: int
     operator_name: str
+    parallel_group: str = ""
     is_active: bool
     camera_ids: list[int] = []
 
@@ -305,6 +334,49 @@ class HourlyOutput(BaseModel):
     hour: datetime
     output: int
     planned: float
+    end: Optional[datetime] = None   # set when the buckets are the line's time slots
+    label: Optional[str] = None      # e.g. "08:30-09:30"
+
+
+class ShiftResult(BaseModel):
+    """The newest run of one shift (A morning, B night): parts finished in its time slots vs its plan so far."""
+    name: str
+    start: datetime
+    end: datetime
+    output: int
+    planned_output: float
+    running: bool
+
+
+class SlotRow(BaseModel):
+    """Plan vs actual of one time slot today."""
+    label: str
+    start: datetime
+    end: datetime
+    plan: int
+    plan_to_now: float              # the running slot: plan × elapsed share
+    actual: Optional[int]           # parts finished by the last step (None for a slot not started yet)
+    variance: Optional[float]       # actual − plan (finished slot) or actual − plan to now (running slot)
+    status: str                     # done | running | future
+    shift: str = "A"
+
+
+class OperatorBalance(BaseModel):
+    """One person (or one single-person step) in the line balance. A person who runs several steps in one loop is one
+    entry; copies of one machine in parallel (parallel_group) share the parts, so his time per part is loop / copies."""
+    label: str
+    station_ids: list[int]
+    sequences: list[int]
+    count: int                         # cycles of his steps in the range (the step with most cycles)
+    loop_sec: Optional[float]          # average cycle of his steps (one loop)
+    loop_content_sec: Optional[float]  # average work + motion of his steps (one loop)
+    parts_per_loop: int                # copies of a parallel machine in his loop (1 = serial steps)
+    per_part_sec: Optional[float]      # loop_content / parts_per_loop: operator time per part (used for balance)
+    work_sec: Optional[float]          # per part
+    motion_sec: Optional[float]        # per part
+    wait_sec: Optional[float]          # per part
+    last_cycle_at: Optional[datetime] = None  # newest cycle of his steps in the range
+    is_bottleneck: bool = False
 
 
 class LineAnalytics(BaseModel):
@@ -312,13 +384,19 @@ class LineAnalytics(BaseModel):
     from_: datetime = Field(serialization_alias="from")
     to: datetime
     stations: list[StationSummary]
+    operators: list[OperatorBalance] = []
     bottleneck_station_id: Optional[int]
+    bottleneck_label: Optional[str] = None
+    line_pace_sec: Optional[float] = None
     balance_efficiency_pct: Optional[float]
     output: int
+    output_outside_plan: int = 0  # parts made outside the planned time slots (a night shift, overtime): not in output
     planned_output: float
     throughput_per_hour: Optional[float]
     capacity_per_hour: Optional[float]
     hourly: list[HourlyOutput]
+    slots_today: list[SlotRow] = []
+    shifts: list[ShiftResult] = []  # the newest run of each shift, newest first
     recommendations: list[Recommendation]
 
 
@@ -373,6 +451,7 @@ class OverviewStation(BaseModel):
 class OverviewLine(BaseModel):
     line: LineOut
     output: int
+    output_outside_plan: int = 0  # parts made outside the planned time slots (a night shift, overtime): not in output
     planned_output: float
     balance_efficiency_pct: Optional[float]
     bottleneck_station_id: Optional[int]
@@ -380,10 +459,12 @@ class OverviewLine(BaseModel):
     line_pace_sec: Optional[float]
     stations: list[OverviewStation]
     open_alerts: int
+    shifts: list[ShiftResult] = []  # the newest run of each shift, newest first
 
 
 class OverviewTotals(BaseModel):
     output: int
+    output_outside_plan: int = 0  # parts made outside the planned time slots (a night shift, overtime): not in output
     planned_output: float
     cameras_online: int
     cameras_total: int

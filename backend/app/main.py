@@ -16,9 +16,11 @@ from . import models
 from .config import settings
 from .database import SessionLocal, init_db
 from .hub import hub, live
-from .routers import analysis, cameras, dashboard, lines, reports, setup, stations
+from .routers import analysis, cameras, dashboard, line_report, lines, machine_analysis, movement, reports, setup, stations
 from .services.analysis import engine as analysis_engine
 from .services.report_engine import engine as report_engine
+from .services.detector_feed import feed as detector_feed
+from .services.movement_reports import engine as movement_reports
 from .services.alerts import engine as alert_engine
 from .services.seed import seed_if_empty
 from .vision.manager import manager
@@ -49,6 +51,7 @@ async def _broadcast_states() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     init_db()
+    detector_feed.prepare()
     with SessionLocal() as db:
         if settings.demo_mode:
             seed_if_empty(db)
@@ -58,6 +61,8 @@ async def lifespan(app: FastAPI):
     await alert_engine.start()
     await analysis_engine.start()
     await report_engine.start()
+    await detector_feed.start()
+    await movement_reports.start()
     bcast = asyncio.create_task(_broadcast_states())
     log.info("Line monitor ready on http://%s:%s (demo=%s)", settings.host, settings.port, settings.demo_mode)
     yield
@@ -65,6 +70,8 @@ async def lifespan(app: FastAPI):
     await alert_engine.stop()
     await analysis_engine.stop()
     await report_engine.stop()
+    await detector_feed.stop()
+    await movement_reports.stop()
     await asyncio.to_thread(manager.stop_all)
     await hub.stop()
 
@@ -79,6 +86,9 @@ app.include_router(lines.router)
 app.include_router(stations.router)
 app.include_router(cameras.router)
 app.include_router(reports.router)
+app.include_router(line_report.router)
+app.include_router(machine_analysis.router)
+app.include_router(movement.router)
 
 
 # ---- serve the built frontend (npm run build) from the same port in production

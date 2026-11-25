@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
-import { RANGE_OPTIONS, useRange } from '../context/RangeContext';
+import { useRange } from '../context/RangeContext';
 
 export function RangeSelector({ className = '' }: { className?: string }) {
-  const { range, setRange } = useRange();
+  const { range, setRange, options } = useRange();
   return (
     <div role="radiogroup" aria-label="Time range" className={`inline-flex rounded-lg border border-edge bg-canvas p-0.5 ${className}`}>
-      {RANGE_OPTIONS.map((o) => {
+      {options.map((o) => {
         const active = o.key === range;
         return (
           <button
@@ -15,7 +15,7 @@ export function RangeSelector({ className = '' }: { className?: string }) {
             aria-checked={active}
             title={o.title}
             onClick={() => setRange(o.key)}
-            className={`rounded-md px-2.5 py-1 text-xs font-semibold transition ${
+            className={`flex-1 rounded-md px-2.5 py-1 text-xs font-semibold transition sm:flex-none ${
               active ? 'bg-panel-3 text-ink shadow-sm ring-1 ring-edge-2' : 'text-ink-3 hover:text-ink'
             }`}
           >

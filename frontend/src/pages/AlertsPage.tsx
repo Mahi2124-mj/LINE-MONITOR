@@ -1,13 +1,11 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BellOff, Check, CheckCheck, CircleAlert, Info, OctagonAlert, TriangleAlert } from 'lucide-react';
+import { BellOff, Check, CircleAlert, Flame, Info, OctagonAlert, TriangleAlert } from 'lucide-react';
 import { api } from '../api/client';
+import type { AlertCounts, AlertFilter } from '../api/client';
 import type { Alert, Severity } from '../api/types';
 import { EmptyState, ErrorState, Skeleton, StaleBanner } from '../components/EmptyState';
-import { ConfirmDialog } from '../components/Form';
-import { Panel } from '../components/Panel';
-import { Segmented } from '../components/RangeSelector';
-import { SeverityBadge } from '../components/StateBadge';
+import { BottleneckBadge, SeverityBadge } from '../components/StateBadge';
 import { useAlertEvents, useLive } from '../context/LiveContext';
 import { usePageTitle } from '../context/PageTitleContext';
 import { useToast } from '../context/ToastContext';
@@ -16,21 +14,30 @@ import { errorMessage, fmtDateTime, fmtRelative } from '../lib/format';
 import { ALERT_TYPE_LABEL, SEVERITY_STYLE } from '../lib/meta';
 
 const SEV_ICON: Record<Severity, typeof Info> = { info: Info, warning: TriangleAlert, critical: OctagonAlert };
+// alerts about the line's bottleneck: a new bottleneck person, and the bottleneck slower than takt
+const BOTTLENECK_TYPES: Alert['type'][] = ['bottleneck', 'over_takt'];
+const isBottleneck = (a: Alert) => BOTTLENECK_TYPES.includes(a.type);
+type Filter = Severity | 'bottleneck' | 'any';
 
 export default function AlertsPage() {
   usePageTitle('Alerts');
   const { push } = useToast();
   const { refreshAlertCount } = useLive();
-  const [status, setStatus] = useState<'open' | 'all'>('open');
-  const [sevFilter, setSevFilter] = useState<Severity | 'any'>('any');
-  const alerts = usePolling(() => api.alerts(status, 200), [status], 20_000);
+  const status = 'open' as 'open' | 'all'; // the page lists open alerts
+  const [sevFilter, setSevFilter] = useState<Filter>('any');
+  // each card loads its own alerts from the server (not a filter over the latest 200 only)
+  const filter: AlertFilter = sevFilter === 'bottleneck' ? { group: 'bottleneck' } : sevFilter === 'any' ? {} : { severity: sevFilter };
+  const alerts = usePolling(() => api.alerts(status, 200, filter), [status, sevFilter], 20_000);
+  const countsQ = usePolling(() => api.alertCounts(), [], 20_000);
   const lines = usePolling(() => api.lines(), [], 60_000);
   const stations = usePolling(() => api.stations(), [], 60_000);
-  const [busy, setBusy] = useState<number | 'all' | null>(null);
-  const [confirmAll, setConfirmAll] = useState(false);
+  const [busy, setBusy] = useState<number | null>(null);
   const [fresh, setFresh] = useState<Set<number>>(new Set());
 
+  const matches = (a: Alert) => sevFilter === 'any' || (sevFilter === 'bottleneck' ? isBottleneck(a) : !isBottleneck(a) && a.severity === sevFilter);
   useAlertEvents((a) => {
+    countsQ.reload();
+    if (!matches(a)) return;
     alerts.setData((prev) => (prev && !prev.some((x) => x.id === a.id) ? [a, ...prev] : prev));
     setFresh((f) => new Set(f).add(a.id));
   });
@@ -42,22 +49,17 @@ export default function AlertsPage() {
     return s ? `Step ${s.sequence} · ${s.name}` : `Station #${id}`;
   };
 
-  const list = useMemo(
-    () =>
-      [...(alerts.data ?? [])]
-        .filter((a) => sevFilter === 'any' || a.severity === sevFilter)
-        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1)),
-    [alerts.data, sevFilter],
-  );
-  const openCount = (alerts.data ?? []).filter((a) => !a.acknowledged).length;
-  const counts = { critical: 0, warning: 0, info: 0 } as Record<Severity, number>;
-  (alerts.data ?? []).forEach((a) => !a.acknowledged && (counts[a.severity] += 1));
+  const list = useMemo(() => [...(alerts.data ?? [])].sort((a, b) => (a.created_at < b.created_at ? 1 : -1)), [alerts.data]);
+  // open alerts per card, counted on the server (bottleneck alerts only on their own card)
+  const counts: AlertCounts = countsQ.data ?? { all: 0, critical: 0, warning: 0, info: 0, bottleneck: 0 };
+  const bottleneckCount = counts.bottleneck;
 
   const ack = async (a: Alert) => {
     setBusy(a.id);
     try {
       const updated = await api.ackAlert(a.id);
       alerts.setData((prev) => (status === 'open' ? prev?.filter((x) => x.id !== a.id) : prev?.map((x) => (x.id === a.id ? updated : x))));
+      countsQ.reload();
       refreshAlertCount();
     } catch (err) {
       push({ kind: 'critical', title: 'Acknowledge failed', message: errorMessage(err) });
@@ -66,24 +68,21 @@ export default function AlertsPage() {
     }
   };
 
-  const ackAll = async () => {
-    setBusy('all');
-    try {
-      const r = await api.ackAllAlerts();
-      push({ kind: 'success', title: `${r.acknowledged} alert${r.acknowledged === 1 ? '' : 's'} acknowledged` });
-      alerts.reload();
-      refreshAlertCount();
-    } catch (err) {
-      push({ kind: 'critical', title: 'Acknowledge all failed', message: errorMessage(err) });
-    } finally {
-      setBusy(null);
-      setConfirmAll(false);
-    }
-  };
-
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-3 md:max-w-xl">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-5 md:max-w-4xl">
+        <button
+          type="button"
+          onClick={() => setSevFilter('any')}
+          title="Show every alert"
+          className={`rounded-xl border bg-panel px-3 py-2 text-left transition ${sevFilter === 'any' ? 'border-sky-500/60 ring-1 ring-sky-500/30' : 'border-edge hover:border-edge-2'}`}
+        >
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-ink-2">
+            <CircleAlert className="size-3.5" /> All
+          </div>
+          <div className="text-2xl font-semibold text-ink tabular-nums">{counts.all.toLocaleString()}</div>
+          <div className="text-[10px] text-ink-3">open</div>
+        </button>
         {(['critical', 'warning', 'info'] as Severity[]).map((s) => {
           const Icon = SEV_ICON[s];
           return (
@@ -96,37 +95,28 @@ export default function AlertsPage() {
               <div className={`flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider ${SEVERITY_STYLE[s].text}`}>
                 <Icon className="size-3.5" /> {SEVERITY_STYLE[s].label}
               </div>
-              <div className="text-2xl font-semibold text-ink tabular-nums">{counts[s]}</div>
+              <div className="text-2xl font-semibold text-ink tabular-nums">{counts[s].toLocaleString()}</div>
               <div className="text-[10px] text-ink-3">open</div>
             </button>
           );
         })}
+        <button
+          type="button"
+          onClick={() => setSevFilter((cur) => (cur === 'bottleneck' ? 'any' : 'bottleneck'))}
+          title="New bottleneck person, and bottleneck slower than takt"
+          className={`rounded-xl border bg-panel px-3 py-2 text-left transition ${sevFilter === 'bottleneck' ? 'border-sky-500/60 ring-1 ring-sky-500/30' : 'border-edge hover:border-edge-2'}`}
+        >
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-orange-400">
+            <Flame className="size-3.5" /> Bottleneck
+          </div>
+          <div className="text-2xl font-semibold text-ink tabular-nums">{bottleneckCount}</div>
+          <div className="text-[10px] text-ink-3">open</div>
+        </button>
       </div>
 
       <StaleBanner error={alerts.data ? alerts.error : null} />
 
-      <Panel
-        title={status === 'open' ? 'Open alerts' : 'All alerts'}
-        subtitle={sevFilter !== 'any' ? `Filtered: ${SEVERITY_STYLE[sevFilter].label}` : 'New alerts appear live'}
-        icon={<CircleAlert className="size-4" />}
-        flush
-        actions={
-          <>
-            <Segmented
-              size="xs"
-              value={status}
-              onChange={setStatus}
-              options={[
-                { value: 'open', label: 'Open' },
-                { value: 'all', label: 'All' },
-              ]}
-            />
-            <button type="button" className="btn btn-sm" disabled={openCount === 0 || busy !== null} onClick={() => setConfirmAll(true)}>
-              <CheckCheck className="size-3.5" /> Acknowledge all
-            </button>
-          </>
-        }
-      >
+      <div className="overflow-hidden rounded-xl border border-edge bg-panel">
         {!alerts.data ? (
           alerts.loading ? (
             <div className="space-y-2 p-4">
@@ -146,19 +136,20 @@ export default function AlertsPage() {
         ) : (
           <ul className="divide-y divide-edge">
             {list.map((a) => {
-              const Icon = SEV_ICON[a.severity];
+              const bn = isBottleneck(a); // shown as a bottleneck alert, not by severity
+              const Icon = bn ? Flame : SEV_ICON[a.severity];
               const sev = SEVERITY_STYLE[a.severity];
               const ln = lineName(a.line_id);
               const sn = stationName(a.station_id);
               return (
                 <li
                   key={a.id}
-                  className={`flex items-start gap-3 border-l-4 px-4 py-3 ${sev.border} ${a.acknowledged ? 'opacity-55' : ''} ${fresh.has(a.id) ? 'animate-slide-in bg-sky-500/5' : ''}`}
+                  className={`flex items-start gap-3 border-l-4 px-4 py-3 ${bn ? 'border-l-red-500' : sev.border} ${a.acknowledged ? 'opacity-55' : ''} ${fresh.has(a.id) ? 'animate-slide-in bg-sky-500/5' : ''}`}
                 >
-                  <Icon className={`mt-0.5 size-4 shrink-0 ${sev.text}`} />
+                  <Icon className={`mt-0.5 size-4 shrink-0 ${bn ? 'text-red-400' : sev.text}`} />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <SeverityBadge severity={a.severity} />
+                      {bn ? <BottleneckBadge /> : <SeverityBadge severity={a.severity} />}
                       <span className="text-sm font-semibold text-ink">{ALERT_TYPE_LABEL[a.type] ?? a.type}</span>
                       {fresh.has(a.id) && <span className="rounded bg-sky-500/20 px-1.5 text-[10px] font-bold text-sky-300">NEW</span>}
                     </div>
@@ -198,17 +189,7 @@ export default function AlertsPage() {
             })}
           </ul>
         )}
-      </Panel>
-
-      <ConfirmDialog
-        open={confirmAll}
-        title="Acknowledge all open alerts?"
-        message={`This marks all ${openCount} open alert${openCount === 1 ? '' : 's'} as acknowledged.`}
-        confirmLabel="Acknowledge all"
-        busy={busy === 'all'}
-        onCancel={() => setConfirmAll(false)}
-        onConfirm={() => void ackAll()}
-      />
+      </div>
     </div>
   );
 }

@@ -1,0 +1,594 @@
+[
+ {
+  "rail": 1,
+  "load": 1792570095.64,
+  "load_local": "13:38:15.6",
+  "out": 1792570099.3,
+  "tray": 1792570101.6,
+  "tray_local": "13:38:21.6",
+  "stop": false,
+  "set": "2026-10-21, camera 13 (640 recording, validation copy data/validation_recordings_yfi1021), afternoon, dark grey box in front of him (layout check: grey). Every rail read on contact sheets of the right person every 0.5 s (0.2-0.25 s where unclear), 13:38:10-13:54:50, no recording gaps: load = his hands put the rail into the lower fixture of the Final Inspection machine (time = start of the fixture-area motion - 0.5 s where that run lies within 1 s of the frame read: 55 rails, else the frame read); out = the rail lifted out (end of the fixture-area motion within 1 s of the frame read: 59 rails, else the frame read); tray = his hand with the rail goes down into the box (frame read). Two rails (13:50:28, 13:54:43) were taken out of the fixture right after the rail before was put away, without a new load (machine holding two rails): they have no load time and are matched on 'out'. Not counted: pen work at the machine without a rail, a liner bag laid into the box (13:52:55-13:53:16), talking to a visitor. The pop rivet flag is not annotated in this set."
+ },
+ {
+  "rail": 2,
+  "load": 1792570107.11,
+  "load_local": "13:38:27.1",
+  "out": 1792570109.27,
+  "tray": 1792570111.7,
+  "tray_local": "13:38:31.7",
+  "stop": false
+ },
+ {
+  "rail": 3,
+  "load": 1792570117.7,
+  "load_local": "13:38:37.7",
+  "out": 1792570118.98,
+  "tray": 1792570122.2,
+  "tray_local": "13:38:42.2",
+  "stop": false
+ },
+ {
+  "rail": 4,
+  "load": 1792570130.65,
+  "load_local": "13:38:50.6",
+  "out": 1792570132.73,
+  "tray": 1792570135.6,
+  "tray_local": "13:38:55.6",
+  "stop": false
+ },
+ {
+  "rail": 5,
+  "load": 1792570145.5,
+  "load_local": "13:39:05.5",
+  "out": 1792570147.48,
+  "tray": 1792570152.4,
+  "tray_local": "13:39:12.4",
+  "stop": false
+ },
+ {
+  "rail": 6,
+  "load": 1792570159.68,
+  "load_local": "13:39:19.7",
+  "out": 1792570161.8,
+  "tray": 1792570168.5,
+  "tray_local": "13:39:28.5",
+  "stop": false,
+  "note": "rail held 6 s after the machine, pen at 13:39:30"
+ },
+ {
+  "rail": 7,
+  "load": 1792570178.05,
+  "load_local": "13:39:38.1",
+  "out": 1792570179.46,
+  "tray": 1792570182.1,
+  "tray_local": "13:39:42.1",
+  "stop": false
+ },
+ {
+  "rail": 8,
+  "load": 1792570189.1,
+  "load_local": "13:39:49.1",
+  "out": 1792570190.0,
+  "tray": 1792570192.2,
+  "tray_local": "13:39:52.2",
+  "stop": false
+ },
+ {
+  "rail": 9,
+  "load": 1792570198.19,
+  "load_local": "13:39:58.2",
+  "out": 1792570200.38,
+  "tray": 1792570203.0,
+  "tray_local": "13:40:03.0",
+  "stop": false
+ },
+ {
+  "rail": 10,
+  "load": 1792570211.62,
+  "load_local": "13:40:11.6",
+  "out": 1792570213.38,
+  "tray": 1792570217.5,
+  "tray_local": "13:40:17.5",
+  "stop": false
+ },
+ {
+  "rail": 11,
+  "load": 1792570226.1,
+  "load_local": "13:40:26.1",
+  "out": 1792570226.8,
+  "tray": 1792570230.4,
+  "tray_local": "13:40:30.4",
+  "stop": false
+ },
+ {
+  "rail": 12,
+  "load": 1792570242.78,
+  "load_local": "13:40:42.8",
+  "out": 1792570244.31,
+  "tray": 1792570247.7,
+  "tray_local": "13:40:47.7",
+  "stop": false
+ },
+ {
+  "rail": 13,
+  "load": 1792570254.6,
+  "load_local": "13:40:54.6",
+  "out": 1792570255.49,
+  "tray": 1792570259.3,
+  "tray_local": "13:40:59.3",
+  "stop": false
+ },
+ {
+  "rail": 14,
+  "out": 1792570261.9,
+  "tray": 1792570265.9,
+  "tray_local": "13:41:05.9",
+  "stop": false,
+  "note": "second rail taken out of the fixture right after the first was put away (two rails back to back)"
+ },
+ {
+  "rail": 15,
+  "load": 1792570278.0,
+  "load_local": "13:41:18.0",
+  "out": 1792570280.08,
+  "tray": 1792570282.0,
+  "tray_local": "13:41:22.0",
+  "stop": false
+ },
+ {
+  "rail": 16,
+  "load": 1792570296.18,
+  "load_local": "13:41:36.2",
+  "out": 1792570298.37,
+  "tray": 1792570301.3,
+  "tray_local": "13:41:41.3",
+  "stop": false
+ },
+ {
+  "rail": 17,
+  "load": 1792570307.32,
+  "load_local": "13:41:47.3",
+  "out": 1792570309.48,
+  "tray": 1792570312.9,
+  "tray_local": "13:41:52.9",
+  "stop": false
+ },
+ {
+  "rail": 18,
+  "load": 1792570319.88,
+  "load_local": "13:41:59.9",
+  "out": 1792570321.5,
+  "tray": 1792570324.7,
+  "tray_local": "13:42:04.7",
+  "stop": false
+ },
+ {
+  "rail": 19,
+  "load": 1792570355.77,
+  "load_local": "13:42:35.8",
+  "out": 1792570357.89,
+  "tray": 1792570360.8,
+  "tray_local": "13:42:40.8",
+  "stop": false,
+  "note": "after a ~30 s wait"
+ },
+ {
+  "rail": 20,
+  "load": 1792570366.8,
+  "load_local": "13:42:46.8",
+  "out": 1792570367.82,
+  "tray": 1792570370.6,
+  "tray_local": "13:42:50.6",
+  "stop": false
+ },
+ {
+  "rail": 21,
+  "load": 1792570377.75,
+  "load_local": "13:42:57.8",
+  "out": 1792570379.84,
+  "tray": 1792570382.6,
+  "tray_local": "13:43:02.6",
+  "stop": false
+ },
+ {
+  "rail": 22,
+  "load": 1792570388.19,
+  "load_local": "13:43:08.2",
+  "out": 1792570389.84,
+  "tray": 1792570392.8,
+  "tray_local": "13:43:12.8",
+  "stop": false
+ },
+ {
+  "rail": 23,
+  "load": 1792570400.0,
+  "load_local": "13:43:20.0",
+  "out": 1792570401.23,
+  "tray": 1792570404.6,
+  "tray_local": "13:43:24.6",
+  "stop": false
+ },
+ {
+  "rail": 24,
+  "load": 1792570422.21,
+  "load_local": "13:43:42.2",
+  "out": 1792570424.56,
+  "tray": 1792570427.4,
+  "tray_local": "13:43:47.4",
+  "stop": false,
+  "note": "after a ~15 s wait"
+ },
+ {
+  "rail": 25,
+  "load": 1792570436.9,
+  "load_local": "13:43:56.9",
+  "out": 1792570439.29,
+  "tray": 1792570442.6,
+  "tray_local": "13:44:02.6",
+  "stop": false
+ },
+ {
+  "rail": 26,
+  "load": 1792570452.72,
+  "load_local": "13:44:12.7",
+  "out": 1792570454.5,
+  "tray": 1792570457.8,
+  "tray_local": "13:44:17.8",
+  "stop": false
+ },
+ {
+  "rail": 27,
+  "load": 1792570462.01,
+  "load_local": "13:44:22.0",
+  "out": 1792570464.3,
+  "tray": 1792570467.0,
+  "tray_local": "13:44:27.0",
+  "stop": false
+ },
+ {
+  "rail": 28,
+  "load": 1792570478.22,
+  "load_local": "13:44:38.2",
+  "out": 1792570479.87,
+  "tray": 1792570483.3,
+  "tray_local": "13:44:43.3",
+  "stop": false,
+  "note": "then ~65 s at the shelf with his back to the camera"
+ },
+ {
+  "rail": 29,
+  "load": 1792570550.78,
+  "load_local": "13:45:50.8",
+  "out": 1792570551.28,
+  "tray": 1792570554.2,
+  "tray_local": "13:45:54.2",
+  "stop": false
+ },
+ {
+  "rail": 30,
+  "load": 1792570559.04,
+  "load_local": "13:45:59.0",
+  "out": 1792570561.18,
+  "tray": 1792570564.4,
+  "tray_local": "13:46:04.4",
+  "stop": false
+ },
+ {
+  "rail": 31,
+  "load": 1792570566.6,
+  "load_local": "13:46:06.6",
+  "out": 1792570567.4,
+  "tray": 1792570571.3,
+  "tray_local": "13:46:11.3",
+  "stop": false,
+  "note": "two rails back to back"
+ },
+ {
+  "rail": 32,
+  "load": 1792570618.2,
+  "load_local": "13:46:58.2",
+  "out": 1792570630.94,
+  "tray": 1792570635.5,
+  "tray_local": "13:47:15.5",
+  "stop": false,
+  "note": "rail left ~12 s in the fixture (visitor talking to him before)"
+ },
+ {
+  "rail": 33,
+  "load": 1792570642.73,
+  "load_local": "13:47:22.7",
+  "out": 1792570644.96,
+  "tray": 1792570647.6,
+  "tray_local": "13:47:27.6",
+  "stop": false
+ },
+ {
+  "rail": 34,
+  "load": 1792570658.4,
+  "load_local": "13:47:38.4",
+  "out": 1792570660.62,
+  "tray": 1792570663.7,
+  "tray_local": "13:47:43.7",
+  "stop": false
+ },
+ {
+  "rail": 35,
+  "load": 1792570672.22,
+  "load_local": "13:47:52.2",
+  "out": 1792570674.16,
+  "tray": 1792570676.6,
+  "tray_local": "13:47:56.6",
+  "stop": false
+ },
+ {
+  "rail": 36,
+  "load": 1792570682.37,
+  "load_local": "13:48:02.4",
+  "out": 1792570684.42,
+  "tray": 1792570687.9,
+  "tray_local": "13:48:07.9",
+  "stop": false
+ },
+ {
+  "rail": 37,
+  "load": 1792570698.52,
+  "load_local": "13:48:18.5",
+  "out": 1792570699.24,
+  "tray": 1792570701.9,
+  "tray_local": "13:48:21.9",
+  "stop": false,
+  "note": "pen work at the machine 13:48:10-17 (no rail of its own)"
+ },
+ {
+  "rail": 38,
+  "load": 1792570718.3,
+  "load_local": "13:48:38.3",
+  "out": 1792570720.36,
+  "tray": 1792570722.9,
+  "tray_local": "13:48:42.9",
+  "stop": false
+ },
+ {
+  "rail": 39,
+  "load": 1792570733.32,
+  "load_local": "13:48:53.3",
+  "out": 1792570735.26,
+  "tray": 1792570738.2,
+  "tray_local": "13:48:58.2",
+  "stop": false
+ },
+ {
+  "rail": 40,
+  "load": 1792570744.34,
+  "load_local": "13:49:04.3",
+  "out": 1792570745.91,
+  "tray": 1792570748.4,
+  "tray_local": "13:49:08.4",
+  "stop": false
+ },
+ {
+  "rail": 41,
+  "load": 1792570760.47,
+  "load_local": "13:49:20.5",
+  "out": 1792570762.8,
+  "tray": 1792570765.2,
+  "tray_local": "13:49:25.2",
+  "stop": false
+ },
+ {
+  "rail": 42,
+  "load": 1792570772.72,
+  "load_local": "13:49:32.7",
+  "out": 1792570773.57,
+  "tray": 1792570776.8,
+  "tray_local": "13:49:36.8",
+  "stop": false
+ },
+ {
+  "rail": 43,
+  "load": 1792570784.18,
+  "load_local": "13:49:44.2",
+  "out": 1792570785.39,
+  "tray": 1792570789.0,
+  "tray_local": "13:49:49.0",
+  "stop": false
+ },
+ {
+  "rail": 44,
+  "load": 1792570796.93,
+  "load_local": "13:49:56.9",
+  "out": 1792570797.61,
+  "tray": 1792570801.1,
+  "tray_local": "13:50:01.1",
+  "stop": false
+ },
+ {
+  "rail": 45,
+  "load": 1792570807.18,
+  "load_local": "13:50:07.2",
+  "out": 1792570808.53,
+  "tray": 1792570812.8,
+  "tray_local": "13:50:12.8",
+  "stop": false
+ },
+ {
+  "rail": 46,
+  "load": 1792570820.27,
+  "load_local": "13:50:20.3",
+  "out": 1792570822.46,
+  "tray": 1792570825.6,
+  "tray_local": "13:50:25.6",
+  "stop": false
+ },
+ {
+  "rail": 47,
+  "out": 1792570828.5,
+  "tray": 1792570832.0,
+  "tray_local": "13:50:32.0",
+  "stop": false,
+  "note": "second rail taken out of the fixture right after the first was put away (no new load seen)"
+ },
+ {
+  "rail": 48,
+  "load": 1792570835.6,
+  "load_local": "13:50:35.6",
+  "out": 1792570836.9,
+  "tray": 1792570838.8,
+  "tray_local": "13:50:38.8",
+  "stop": false
+ },
+ {
+  "rail": 49,
+  "load": 1792570854.21,
+  "load_local": "13:50:54.2",
+  "out": 1792570855.09,
+  "tray": 1792570858.5,
+  "tray_local": "13:50:58.5",
+  "stop": false
+ },
+ {
+  "rail": 50,
+  "load": 1792570869.06,
+  "load_local": "13:51:09.1",
+  "out": 1792570869.76,
+  "tray": 1792570873.4,
+  "tray_local": "13:51:13.4",
+  "stop": false
+ },
+ {
+  "rail": 51,
+  "load": 1792570887.99,
+  "load_local": "13:51:27.0",
+  "out": 1792570888.87,
+  "tray": 1792570891.6,
+  "tray_local": "13:51:31.6",
+  "stop": false,
+  "note": "then ~9 s bent at the box (arranging)"
+ },
+ {
+  "rail": 52,
+  "load": 1792570906.72,
+  "load_local": "13:51:46.7",
+  "out": 1792570908.27,
+  "tray": 1792570911.8,
+  "tray_local": "13:51:51.8",
+  "stop": false
+ },
+ {
+  "rail": 53,
+  "load": 1792570918.25,
+  "load_local": "13:51:58.2",
+  "out": 1792570918.95,
+  "tray": 1792570922.3,
+  "tray_local": "13:52:02.3",
+  "stop": false
+ },
+ {
+  "rail": 54,
+  "load": 1792570929.92,
+  "load_local": "13:52:09.9",
+  "out": 1792570930.61,
+  "tray": 1792570933.7,
+  "tray_local": "13:52:13.7",
+  "stop": false
+ },
+ {
+  "rail": 55,
+  "load": 1792570940.91,
+  "load_local": "13:52:20.9",
+  "out": 1792570941.79,
+  "tray": 1792570944.7,
+  "tray_local": "13:52:24.7",
+  "stop": false
+ },
+ {
+  "rail": 56,
+  "load": 1792570955.59,
+  "load_local": "13:52:35.6",
+  "out": 1792570956.33,
+  "tray": 1792570958.8,
+  "tray_local": "13:52:38.8",
+  "stop": false
+ },
+ {
+  "rail": 57,
+  "load": 1792570966.93,
+  "load_local": "13:52:46.9",
+  "out": 1792570968.27,
+  "tray": 1792570971.9,
+  "tray_local": "13:52:51.9",
+  "stop": false,
+  "note": "then a blue liner bag handled at the shelf and laid into the box 13:52:55-13:53:16 (no rail)"
+ },
+ {
+  "rail": 58,
+  "load": 1792571000.62,
+  "load_local": "13:53:20.6",
+  "out": 1792571002.48,
+  "tray": 1792571005.6,
+  "tray_local": "13:53:25.6",
+  "stop": false
+ },
+ {
+  "rail": 59,
+  "load": 1792571010.36,
+  "load_local": "13:53:30.4",
+  "out": 1792571012.5,
+  "tray": 1792571015.9,
+  "tray_local": "13:53:35.9",
+  "stop": false
+ },
+ {
+  "rail": 60,
+  "load": 1792571024.33,
+  "load_local": "13:53:44.3",
+  "out": 1792571025.82,
+  "tray": 1792571028.1,
+  "tray_local": "13:53:48.1",
+  "stop": false
+ },
+ {
+  "rail": 61,
+  "load": 1792571039.16,
+  "load_local": "13:53:59.2",
+  "out": 1792571039.83,
+  "tray": 1792571042.7,
+  "tray_local": "13:54:02.7",
+  "stop": false
+ },
+ {
+  "rail": 62,
+  "load": 1792571049.0,
+  "load_local": "13:54:09.0",
+  "out": 1792571050.02,
+  "tray": 1792571052.9,
+  "tray_local": "13:54:12.9",
+  "stop": false
+ },
+ {
+  "rail": 63,
+  "load": 1792571064.65,
+  "load_local": "13:54:24.6",
+  "out": 1792571066.51,
+  "tray": 1792571069.2,
+  "tray_local": "13:54:29.2",
+  "stop": false
+ },
+ {
+  "rail": 64,
+  "load": 1792571075.28,
+  "load_local": "13:54:35.3",
+  "out": 1792571077.17,
+  "tray": 1792571080.2,
+  "tray_local": "13:54:40.2",
+  "stop": false
+ },
+ {
+  "rail": 65,
+  "out": 1792571083.2,
+  "tray": 1792571086.1,
+  "tray_local": "13:54:46.1",
+  "stop": false,
+  "note": "second rail out of the fixture right after the first was put away"
+ }
+]

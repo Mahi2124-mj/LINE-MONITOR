@@ -96,16 +96,20 @@ class LiveRegistry:
                     st.cycle_start_ts = None
                     st.operator_present = st.part_present = False
 
-    def record_cycle(self, station_id: int, cycle_sec: float, at_ts: float) -> None:
+    def record_cycle(self, station_id: int, cycle_sec: float, at_ts: float, count: bool = True, timer: bool = True) -> None:
+        """count: today's count and last cycle; timer: the running cycle starts again at at_ts. For steps whose cycles
+        come from the step detectors (minutes late) the live counter still restarts the timer but does not count."""
         with self._lock:
             self._roll_day()
             st = self._states.get(station_id)
             if st is None:
                 return
-            st.count_today += 1
-            st.sum_today += cycle_sec
-            st.last_cycle_sec = cycle_sec
-            st.cycle_start_ts = at_ts
+            if count:
+                st.count_today += 1
+                st.sum_today += cycle_sec
+                st.last_cycle_sec = cycle_sec
+            if timer:
+                st.cycle_start_ts = at_ts
 
     def _roll_day(self) -> None:
         today = date.today()

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import queue
 import random
 import threading
 import time
@@ -112,6 +113,12 @@ class CameraWorker(threading.Thread):
         self.cycle_start: dict[int, float] = {}
         self.cycle_memory: dict[int, dict] = {}  # rhythm / recent cycle times per station, kept across reconnects
         self._ref_request = False
+        # shared stream: a leader reads the camera and runs pose once, its followers (other stations on the same
+        # physical camera) get every processed frame + the persons found and only run their own zones / analyzers
+        self.followers: list[CameraWorker] = []
+        self.leader: CameraWorker | None = None
+        self.follow_mode = False
+        self._inbox: queue.Queue = queue.Queue(maxsize=2)
         self._last_fc: FrameContext | None = None
         self.ctx: CameraContext | None = None
         self.analyzers: list[Analyzer] = []
@@ -166,6 +173,29 @@ class CameraWorker(threading.Thread):
         self._set_status(error=None, tracker=getattr(self.tracker, "name", "none"))
         return True
 
+    def _try_sub_stream(self) -> bool:
+        """On the heavy main stream although a sub stream exists: open the sub stream next to the running one and switch
+        only when it works. Closing first left camera .32 offline for hours on 2026-10-21, when the router refused the
+        new connection (it does so for a while after many reconnects from this PC)."""
+        log.info("camera %s: trying the sub stream again", self.camera_id)
+        station = self.stations.get(self.info.get("station_id")) if self.info.get("station_id") else None
+        new = None
+        try:
+            new = make_source(self.info, station)
+            ok = new.open()
+        except Exception:
+            ok = False
+        if ok and getattr(new, "active", None) != getattr(new, "src", None):  # got the sub stream
+            old, self.source = self.source, new
+            old.close()
+            self.tracker = make_tracker(self.config.tracker, self.source)
+            log.info("camera %s: switched to the sub stream", self.camera_id)
+            return True
+        if ok and new is not None:
+            new.close()
+        self.source.opened_at = time.time()  # stay on the main stream, try again later
+        return False
+
     def _setup_pipeline(self, w: int, h: int) -> None:
         for a in self.analyzers:  # reconnect / resolution change: keep accumulated data
             try:
@@ -189,7 +219,7 @@ class CameraWorker(threading.Thread):
         if excl:  # conveyors, passages, neighbouring stations: ignore motion there
             self._excl_mask = np.full((h, w), 255, np.uint8)
             cv2.fillPoly(self._excl_mask, [z.pts_px for z in excl], 0)
-        if hasattr(self.tracker, "anchor"):
+        if hasattr(self.tracker, "anchor") and not self.follow_mode:  # a follower must not move the leader's tracker
             # motion tracker: assume the operator stands at the bottom edge of the work area (camera facing the bench)
             was = self.ctx.zones_of("work_area")
             if was:
@@ -248,6 +278,13 @@ class CameraWorker(threading.Thread):
         meta = self.stations.get(draft.station_id)
         if meta is None:
             return
+        from ..services.detector_feed import feed
+
+        if feed.owns(draft.station_id):  # the validated step detector counts this step (services/detector_feed.py)
+            from ..hub import live
+
+            live.record_cycle(draft.station_id, draft.cycle_sec, draft.ended_ts, count=False)
+            return
         try:
             from ..services.cycles import persist_cycle
 
@@ -297,7 +334,31 @@ class CameraWorker(threading.Thread):
                 self._last_operator[sid] = stand(best)
             fc.station_person[sid] = best
 
-    def _process(self, frame: np.ndarray, now: float, dt: float) -> None:
+    # ------------------------------------------------------------ shared stream
+    def add_follower(self, w: "CameraWorker") -> None:
+        with self.lock:
+            if w not in self.followers:
+                self.followers.append(w)
+        w.leader = self
+
+    def remove_follower(self, w: "CameraWorker") -> None:
+        with self.lock:
+            if w in self.followers:
+                self.followers.remove(w)
+
+    def feed(self, frame: np.ndarray, now: float, persons: list) -> None:
+        """Called by the leader with every processed frame; never blocks it (the oldest waiting frame is dropped)."""
+        for _ in range(2):
+            try:
+                self._inbox.put_nowait((frame, now, persons))
+                return
+            except queue.Full:
+                try:
+                    self._inbox.get_nowait()
+                except queue.Empty:
+                    pass
+
+    def _process(self, frame: np.ndarray, now: float, dt: float, persons: list | None = None) -> None:
         assert self.ctx is not None
         gray = cv2.GaussianBlur(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY), (5, 5), 0)
         fg_cache: dict[str, np.ndarray | None] = {}
@@ -318,11 +379,14 @@ class CameraWorker(threading.Thread):
             return fg_cache.get("fg")
 
         fc = FrameContext(t=now, dt=dt, frame=frame, gray=gray, fg_mask=fg_mask)
-        try:
-            persons = self.tracker.detect(fc) if self.tracker is not None else []
-        except Exception as e:
-            log.warning("tracker failed on camera %s: %s", self.camera_id, e)
-            persons = []
+        if persons is None:  # this worker reads the stream itself (alone, or as the leader of a shared stream)
+            try:
+                persons = self.tracker.detect(fc) if self.tracker is not None else []
+            except Exception as e:
+                log.warning("tracker failed on camera %s: %s", self.camera_id, e)
+                persons = []
+            for f in list(self.followers):
+                f.feed(frame, now, persons)
         self._assign_persons(persons, fc)
         if self.recorder is not None:
             main_sid = self.info.get("station_id") or (self.ctx.cycle_station_ids[0] if self.ctx.cycle_station_ids else None)
@@ -433,6 +497,10 @@ class CameraWorker(threading.Thread):
 
     # ------------------------------------------------------------ main loop
     def run(self) -> None:
+        if self.follow_mode:
+            self._run_follower()
+            self._shutdown()
+            return
         # reconnects are spaced out (3 s doubling to 60 s, with jitter): a burst of connection attempts from
         # many cameras looks like an attack to some factory routers / cameras, which then block this PC
         backoff = 3.0
@@ -452,9 +520,8 @@ class CameraWorker(threading.Thread):
                     backoff, fails = 3.0, 0
                     frame_size = None
                 elif getattr(self.source, "wants_reopen", False):
-                    log.info("camera %s: trying the sub stream again", self.camera_id)
-                    self.source.close()
-                    self.source = None
+                    if self._try_sub_stream():
+                        frame_size = None
                     continue
 
                 proc_iv = 1.0 / max(0.5, self.config.process_fps)
@@ -514,7 +581,59 @@ class CameraWorker(threading.Thread):
                 log.exception("camera %s: loop error", self.camera_id)
                 self._stop_evt.wait(1.0)
 
-        # shutdown
+        self._shutdown()
+
+    def _run_follower(self) -> None:
+        """Follower of a shared stream: no stream of its own, frames + persons come from the leader."""
+        next_proc = next_stream = 0.0
+        last_proc = None
+        fps_ema = 0.0
+        frame_size: tuple[int, int] | None = None
+        last_frame_t = time.time()
+        while not self._stop_evt.is_set():
+            try:
+                try:
+                    frame, now, persons = self._inbox.get(timeout=0.5)
+                except queue.Empty:
+                    if time.time() - last_frame_t > 10 and self.status.get("online"):
+                        lid = self.leader.camera_id if self.leader is not None else "?"
+                        self._set_status(online=False, fps=0.0, error=f"waiting for frames of camera {lid} (same camera)")
+                    continue
+                last_frame_t = time.time()
+                if self.leader is not None:
+                    self.tracker = self.leader.tracker  # its name decides pose vs motion logic; never run by a follower
+                h, w = frame.shape[:2]
+                if frame_size != (w, h):
+                    frame_size = (w, h)
+                    self._setup_pipeline(w, h)
+                    self.status.update(width=w, height=h, tracker=getattr(self.tracker, "name", "none"))
+                if self._ref_request:
+                    self._ref_request = False
+                    self._load_reference(w, h)
+                self.latest_frame = frame
+                if now >= next_proc:
+                    dt = 0.0 if last_proc is None else min(2.0, now - last_proc)
+                    if last_proc is not None and dt > 0:
+                        fps_ema = (1 / dt) if fps_ema == 0 else 0.9 * fps_ema + 0.1 * (1 / dt)
+                    last_proc = now
+                    try:
+                        self._process(frame, now, dt, persons=persons)
+                    except Exception:
+                        log.exception("processing error on camera %s", self.camera_id)
+                    next_proc = now + 1.0 / max(0.5, self.config.process_fps)
+                    self._set_status(online=True, error=None, fps=round(fps_ema, 1), last_frame_at=datetime.now())
+                if self.viewers > 0 and now >= next_stream:
+                    jpg = self.render_jpeg(True)
+                    if jpg:
+                        self.jpeg, self.jpeg_seq = jpg, self.jpeg_seq + 1
+                    next_stream = now + 1.0 / max(1.0, settings.stream_fps)
+            except Exception:
+                log.exception("camera %s: follower loop error", self.camera_id)
+                self._stop_evt.wait(1.0)
+
+    def _shutdown(self) -> None:
+        if self.leader is not None:
+            self.leader.remove_follower(self)
         for a in self.analyzers:
             try:
                 a.flush(force=True)

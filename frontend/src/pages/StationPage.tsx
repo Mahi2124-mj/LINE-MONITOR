@@ -74,6 +74,9 @@ export default function StationPage() {
 }
 
 function StationView({ a, error, reload, rangeTitle }: { a: StationAnalytics; error: unknown; reload: () => void; rangeTitle: string }) {
+  // counted by its checked step detector: the old hand tracking (reaches, picks, heatmap) does not run for it
+  const feed = usePolling(() => api.reportStatus(), [], 60_000);
+  const checked = !!feed.data?.detector_feed?.owned_stations.includes(a.station.id);
   const { range } = useRange();
   const st = a.station;
   const live = useStationLive(st.id, a.live);
@@ -133,7 +136,7 @@ function StationView({ a, error, reload, rangeTitle }: { a: StationAnalytics; er
               <InfoItem icon={<User className="size-3" />} label="Operator" value={st.operator_name || '—'} />
               <InfoItem icon={<Target className="size-3" />} label="Target cycle" value={fmtSec(st.target_cycle_sec)} />
               <InfoItem icon={<Timer className="size-3" />} label="Line takt" value={fmtSec(takt)} />
-              <InfoItem icon={<Hand className="size-3" />} label="Expected picks" value={`${fmtNum(st.expected_picks)} / cycle`} />
+              {!checked && <InfoItem icon={<Hand className="size-3" />} label="Expected picks" value={`${fmtNum(st.expected_picks)} / cycle`} />}
             </dl>
           </Panel>
 
@@ -166,7 +169,7 @@ function StationView({ a, error, reload, rangeTitle }: { a: StationAnalytics; er
               </select>
             ) : camId !== null ? (
               <span className="flex items-center gap-3">
-                <Link to={`/analysis/${camId}`} className="btn btn-sm btn-primary">
+                <Link to={checked ? `/analysis/step/${a.station.id}` : `/analysis/${camId}`} className="btn btn-sm btn-primary">
                   Element breakup
                 </Link>
                 <Link to={`/cameras/${camId}`} className="text-xs link">
@@ -267,6 +270,19 @@ function StationView({ a, error, reload, rangeTitle }: { a: StationAnalytics; er
         <div className="grid gap-5 xl:grid-cols-[minmax(0,380px)_minmax(0,1fr)]">
           <div className="min-w-0 space-y-4">
             <BreakdownDonut va={m.va_pct} motion={m.motion_waste_pct} wait={m.wait_pct} />
+            {checked ? (
+              <div className="rounded-lg border border-edge p-3 text-sm text-ink-2">
+                This step is counted by its checked step detector. Walking, carrying and waiting per element and per operator are on{' '}
+                <Link to="/movement" className="link">
+                  Movement &amp; waste
+                </Link>{' '}
+                and in{' '}
+                <Link to={`/analysis/step/${a.station.id}`} className="link">
+                  Cycle analysis
+                </Link>
+                .
+              </div>
+            ) : (
             <div className="grid grid-cols-2 gap-2">
               <MoveTile icon={<Hand className="size-3.5" />} label="Hand travel" value={fmtMeters(m.avg_hand_travel_m)} unit="per cycle" />
               <MoveTile icon={<Ruler className="size-3.5" />} label="Reaches outside" value={fmtNum(m.avg_reach_count, 1)} unit="per cycle" warn={(m.avg_reach_count ?? 0) > 0.5} />
@@ -291,13 +307,16 @@ function StationView({ a, error, reload, rangeTitle }: { a: StationAnalytics; er
                 )}
               </div>
             </div>
+            )}
             <p className="text-[11px] leading-relaxed text-ink-3">
               <span className={BREAKDOWN.motion.text}>Motion waste</span> = reaching outside the work area, walking and time away from the station.{' '}
               <span className={BREAKDOWN.wait.text}>Wait</span> = waiting for parts / blocked / idle.
             </p>
           </div>
           <div className="min-w-0">
-            {camId !== null ? (
+            {checked ? (
+              <EmptyState compact title="No hand heatmap for this step" message="The old hand tracking does not run on steps counted by a checked detector." />
+            ) : camId !== null ? (
               <HeatmapCanvas cameraId={camId} range={range} zones={camera.data?.zones ?? []} />
             ) : (
               <EmptyState compact title="No camera – no movement tracking" message="Heatmaps and spaghetti diagrams need a camera on this step." />
@@ -310,7 +329,7 @@ function StationView({ a, error, reload, rangeTitle }: { a: StationAnalytics; er
         <RecommendationList items={a.recommendations} />
       </Panel>
 
-      <RecentCycles station={st} hasCamera={st.camera_ids.length > 0} onAdded={reload} />
+      <RecentCycles station={st} hasCamera={st.camera_ids.length > 0} checked={checked} onAdded={reload} />
     </div>
   );
 }
@@ -400,7 +419,7 @@ function MoveTile({ icon, label, value, unit, warn }: { icon: ReactNode; label: 
 
 /* ----------------------------------------------------------- recent cycles */
 
-function RecentCycles({ station, hasCamera, onAdded }: { station: Station; hasCamera: boolean; onAdded: () => void }) {
+function RecentCycles({ station, hasCamera, checked, onAdded }: { station: Station; hasCamera: boolean; checked: boolean; onAdded: () => void }) {
   const { range } = useRange();
   const cycles = usePolling(() => api.stationCycles(station.id, range, 50), [station.id, range], 30_000);
   const [fresh, setFresh] = useState<Set<number>>(new Set());
@@ -472,9 +491,13 @@ function RecentCycles({ station, hasCamera, onAdded }: { station: Station; hasCa
                   <th className="text-right!">Work</th>
                   <th className="text-right!">Motion</th>
                   <th className="text-right!">Wait</th>
-                  <th className="text-right!">Reaches</th>
-                  <th className="text-right!">Picks</th>
-                  <th className="text-right!">Walk</th>
+                  {!checked && (
+                    <>
+                      <th className="text-right!">Reaches</th>
+                      <th className="text-right!">Picks</th>
+                      <th className="text-right!">Walk</th>
+                    </>
+                  )}
                   <th>Source</th>
                   <th>Target</th>
                 </tr>
@@ -488,12 +511,16 @@ function RecentCycles({ station, hasCamera, onAdded }: { station: Station; hasCa
                     <td className="text-right tabular-nums text-emerald-300/90">{fmtSec(c.work_sec)}</td>
                     <td className={`text-right tabular-nums ${c.motion_waste_sec > 0.5 ? 'text-orange-300' : 'text-ink-2'}`}>{fmtSec(c.motion_waste_sec)}</td>
                     <td className="text-right tabular-nums text-ink-2">{fmtSec(c.wait_sec)}</td>
-                    <td className={`text-right tabular-nums ${c.reach_count > 0 ? 'text-orange-300' : 'text-ink-2'}`}>{fmtNum(c.reach_count)}</td>
-                    <td className={`text-right tabular-nums ${c.pick_count > station.expected_picks ? 'font-semibold text-orange-300' : 'text-ink-2'}`}>
-                      {fmtNum(c.pick_count)}
-                      <span className="text-ink-3">/{station.expected_picks}</span>
-                    </td>
-                    <td className="text-right tabular-nums text-ink-2">{fmtMeters(c.walk_m, 1)}</td>
+                    {!checked && (
+                      <>
+                        <td className={`text-right tabular-nums ${c.reach_count > 0 ? 'text-orange-300' : 'text-ink-2'}`}>{fmtNum(c.reach_count)}</td>
+                        <td className={`text-right tabular-nums ${c.pick_count > station.expected_picks ? 'font-semibold text-orange-300' : 'text-ink-2'}`}>
+                          {fmtNum(c.pick_count)}
+                          <span className="text-ink-3">/{station.expected_picks}</span>
+                        </td>
+                        <td className="text-right tabular-nums text-ink-2">{fmtMeters(c.walk_m, 1)}</td>
+                      </>
+                    )}
                     <td className="text-xs text-ink-3">{c.source}</td>
                     <td>
                       {c.over_target ? (

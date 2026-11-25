@@ -18,6 +18,10 @@ class Line(Base):
     takt_time_sec: Mapped[float] = mapped_column(Float, default=60.0)
     shift_start: Mapped[str] = mapped_column(String(5), default="08:00")
     shift_end: Mapped[str] = mapped_column(String(5), default="20:00")
+    # planned output per time slot of the day: [{"start": "08:30", "end": "09:30", "plan": 220}, ...]; empty = takt × shift
+    slot_plan: Mapped[list] = mapped_column(JSON, default=list)
+    # days without production ("2026-10-20"): no plan, no stoppage alerts
+    off_days: Mapped[list] = mapped_column(JSON, default=list)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.now)
 
@@ -36,7 +40,10 @@ class Station(Base):
     parts_added: Mapped[list] = mapped_column(JSON, default=list)
     target_cycle_sec: Mapped[float] = mapped_column(Float, default=60.0)
     expected_picks: Mapped[int] = mapped_column(Integer, default=2)
+    # steps with the same operator_name are run by one person (one loop over all of them); empty = own operator
     operator_name: Mapped[str] = mapped_column(String(120), default="")
+    # steps with the same parallel_group are copies of one machine that share the parts (e.g. Guide S/A Insert #1 / #2)
+    parallel_group: Mapped[str] = mapped_column(String(40), default="")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
 
 
@@ -76,6 +83,8 @@ class Cycle(Base):
     over_target: Mapped[bool] = mapped_column(Boolean, default=False)
     # {"hand": [[x,y],...], "body": [[x,y],...]} normalized; only kept for vision/simulated cycles
     track: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
+    # step-detector cycles: {"key": "yhs", "el": {"WALK": 1.1, ...}} element seconds (see services/detector_feed.py)
+    elements: Mapped[dict | None] = mapped_column(JSON(none_as_null=True), nullable=True)
 
     __table_args__ = (
         Index("ix_cycles_station_ended", "station_id", "ended_at"),

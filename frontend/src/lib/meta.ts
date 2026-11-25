@@ -170,12 +170,12 @@ export const SOURCE_TYPE_META: Record<SourceType, { label: string; placeholder: 
 };
 
 export const ALERT_TYPE_LABEL: Record<Alert['type'], string> = {
-  bottleneck: 'Bottleneck',
+  bottleneck: 'New bottleneck',
   slow_cycle: 'Slow cycle',
   stoppage: 'Stoppage',
   camera_offline: 'Camera offline',
   excess_motion: 'Excess motion',
-  over_takt: 'Over takt',
+  over_takt: 'Slower than takt',
   unbalanced: 'Unbalanced line',
 };
 

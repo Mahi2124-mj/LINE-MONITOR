@@ -13,7 +13,7 @@ import {
   useYAxisScale,
   type BarShapeProps,
 } from 'recharts';
-import type { StationSummary } from '../../api/types';
+import type { OperatorBalance, StationSummary } from '../../api/types';
 import { fmtSec } from '../../lib/format';
 import { BREAKDOWN, CHART } from '../../lib/meta';
 import { AXIS_PROPS, ChartLegend, TooltipBox } from './ChartTooltip';
@@ -27,18 +27,51 @@ interface Row {
   wait: number;
   content: number | null;
   cycle: number | null;
-  target: number;
+  target: number | null;
   bottleneck: boolean;
   count: number;
 }
 
+/** One bar per person when people run several steps (or copies of a machine): his time per part. */
+function operatorRows(operators: OperatorBalance[]): Row[] {
+  return operators.map((o) => {
+    const named = !o.label.startsWith('Step ');
+    const steps = o.sequences.length > 1 ? `steps ${o.sequences.join('+')}` : `step ${o.sequences[0]}`;
+    return {
+      key: named ? o.label.replace(/ \(steps? [^)]*\)$/, '') : `Step ${o.sequences[0]}`,
+      name: named ? steps + (o.parts_per_loop > 1 ? ` · ${o.parts_per_loop} parts/loop` : '') : o.label.replace(/^Step \d+: /, ''),
+      sequence: Math.min(...o.sequences),
+      work: o.work_sec ?? 0,
+      motion: o.motion_sec ?? 0,
+      wait: o.wait_sec ?? 0,
+      content: o.per_part_sec,
+      cycle: o.loop_sec !== null ? o.loop_sec / o.parts_per_loop : null,
+      target: null,
+      bottleneck: o.is_bottleneck,
+      count: o.count,
+    };
+  });
+}
+
 const SURFACE = '#111419';
 
-/** Line balance chart: stacked operator time per station vs takt and each station's target. */
-export const YamazumiChart = memo(function YamazumiChart({ stations, taktSec, height = 300 }: { stations: StationSummary[]; taktSec: number; height?: number }) {
+/** Line balance chart: stacked operator time per station vs takt and each station's target. With `operators` (people who
+ * run several steps or copies of a machine) one bar per person: his time per part. */
+export const YamazumiChart = memo(function YamazumiChart({
+  stations,
+  operators,
+  taktSec,
+  height = 300,
+}: {
+  stations: StationSummary[];
+  operators?: OperatorBalance[];
+  taktSec: number;
+  height?: number;
+}) {
+  const perPerson = !!operators?.some((o) => o.station_ids.length > 1 || o.parts_per_loop > 1);
   const data = useMemo<Row[]>(
     () =>
-      [...stations]
+      perPerson && operators ? operatorRows(operators) : [...stations]
         .sort((a, b) => a.station.sequence - b.station.sequence)
         .map((s) => ({
           key: `Step ${s.station.sequence}`,
@@ -53,10 +86,10 @@ export const YamazumiChart = memo(function YamazumiChart({ stations, taktSec, he
           bottleneck: s.is_bottleneck,
           count: s.stats.count,
         })),
-    [stations],
+    [stations, operators, perPerson],
   );
 
-  const maxY = Math.max(taktSec, ...data.map((d) => Math.max(d.work + d.motion + d.wait, d.target))) * 1.15 || 10;
+  const maxY = Math.max(taktSec, ...data.map((d) => Math.max(d.work + d.motion + d.wait, d.target ?? 0))) * 1.15 || 10;
 
   const shape = (fill: string, top: boolean) =>
     function SegmentShape(p: BarShapeProps) {
@@ -83,7 +116,7 @@ export const YamazumiChart = memo(function YamazumiChart({ stations, taktSec, he
           { label: BREAKDOWN.motion.label, color: BREAKDOWN.motion.hex },
           { label: BREAKDOWN.wait.label, color: BREAKDOWN.wait.hex },
           { label: `Takt ${fmtSec(taktSec)}`, color: CHART.takt, kind: 'dash' },
-          { label: 'Station target', color: CHART.target, kind: 'line' },
+          ...(perPerson ? [] : [{ label: 'Station target', color: CHART.target, kind: 'line' as const }]),
           { label: 'Bottleneck', color: CHART.bottleneck, kind: 'line' },
         ]}
       />
@@ -97,7 +130,7 @@ export const YamazumiChart = memo(function YamazumiChart({ stations, taktSec, he
               width={52}
               domain={[0, Math.ceil(maxY)]}
               tickFormatter={(v: number) => `${v}s`}
-              label={{ value: 'seconds / cycle', angle: -90, position: 'insideLeft', offset: 12, fill: CHART.tick, fontSize: 11, dy: 50 }}
+              label={{ value: perPerson ? 'seconds / part' : 'seconds / cycle', angle: -90, position: 'insideLeft', offset: 12, fill: CHART.tick, fontSize: 11, dy: 50 }}
             />
             <Tooltip cursor={{ fill: 'rgba(148,163,184,0.06)' }} content={({ active, payload }) => (active && payload?.length ? <YamazumiTooltip row={payload[0].payload as Row} takt={taktSec} /> : null)} />
             <Bar dataKey="work" stackId="t" name="Work" fill={BREAKDOWN.work.hex} shape={shape(BREAKDOWN.work.hex, false)} isAnimationActive={false} />
@@ -137,7 +170,7 @@ function StationOverlay({ data }: { data: Row[] }) {
         const total = d.work + d.motion + d.wait;
         const yTop = y(total);
         const yBase = y(0);
-        const yTarget = y(d.target);
+        const yTarget = d.target !== null ? y(d.target) : undefined;
         const cx = (x0 + x1) / 2;
         return (
           <g key={d.key}>
@@ -207,7 +240,7 @@ function YamazumiTooltip({ row, takt }: { row: Row; takt: number }) {
         { label: BREAKDOWN.wait.short, value: fmtSec(row.wait), color: BREAKDOWN.wait.hex },
         { label: 'Operator content', value: fmtSec(row.content), emphasis: true, tone: row.content !== null && takt > 0 && row.content > takt ? 'bad' : undefined },
         { label: 'Avg cycle', value: fmtSec(row.cycle ?? total) },
-        { label: 'Target', value: fmtSec(row.target), color: CHART.target },
+        ...(row.target !== null ? [{ label: 'Target', value: fmtSec(row.target), color: CHART.target }] : []),
         { label: 'Takt', value: fmtSec(takt), color: CHART.takt, dashed: true },
       ]}
       footer={`${row.count.toLocaleString()} cycles`}

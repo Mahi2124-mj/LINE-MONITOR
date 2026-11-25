@@ -53,6 +53,17 @@
   html {
     color-scheme: dark;
   }
+  /* big screens (a TV, a 4K monitor at 100 %): the whole page scales up so it reads from a distance */
+  @media (min-width: 2400px) {
+    html {
+      zoom: 1.35;
+    }
+  }
+  @media (min-width: 3200px) {
+    html {
+      zoom: 1.8;
+    }
+  }
   body {
     background-color: var(--color-canvas);
     color: var(--color-ink);

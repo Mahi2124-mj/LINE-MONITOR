@@ -38,6 +38,25 @@ STATION_JOBS = {
     "m34": {"cams": (3, 4), "cmd": [str(TOOLS / "station_breakup.py"), "m34", "--auto"], "pattern": "auto_m34_*[0-9]"},
     "m5": {"cams": (5,), "cmd": [str(TOOLS / "station_breakup.py"), "m5", "--auto"], "pattern": "auto_m5_*[0-9]"},
     "final:6": {"cams": (6, 7), "cmd": [str(TOOLS / "final_report.py"), "--auto"], "pattern": "auto_final_*[0-9]"},
+    # YRA line steps 1-3 (one operator runs all three machines; camera .30 recorded as camera 8)
+    "yur": {"cams": (8,), "stations": (8,), "cmd": [str(TOOLS / "station_breakup.py"), "yur", "--auto"], "pattern": "auto_yur_*[0-9]"},
+    "yhs": {"cams": (8,), "stations": (14,), "cmd": [str(TOOLS / "station_breakup.py"), "yhs", "--auto"], "pattern": "auto_yhs_*[0-9]"},
+    "yxl": {"cams": (8,), "stations": (15,), "cmd": [str(TOOLS / "station_breakup.py"), "yxl", "--auto"], "pattern": "auto_yxl_*[0-9]"},
+    # YRA line steps 4-5 (one operator runs both Guide S/A Insert machines; camera .32 recorded as camera 9)
+    "yg1": {"cams": (9,), "stations": (9,), "cmd": [str(TOOLS / "station_breakup.py"), "yg1", "--auto"], "pattern": "auto_yg1_*[0-9]"},
+    "yg2": {"cams": (9,), "stations": (10,), "cmd": [str(TOOLS / "station_breakup.py"), "yg2", "--auto"], "pattern": "auto_yg2_*[0-9]"},
+    # YRA line steps 6-8 (camera .34 recorded as camera 18): operator A runs the greasing and Rr machines and loads the Fr
+    # machine; operator B works the rail out of the Fr nest
+    "ylr": {"cams": (18,), "stations": (18,), "cmd": [str(TOOLS / "station_breakup.py"), "ylr", "--auto"], "pattern": "auto_ylr_*[0-9]"},
+    "ysr": {"cams": (18,), "stations": (17,), "cmd": [str(TOOLS / "station_breakup.py"), "ysr", "--auto"], "pattern": "auto_ysr_*[0-9]"},
+    "ysf": {"cams": (18,), "stations": (19,), "cmd": [str(TOOLS / "station_breakup.py"), "ysf", "--auto"], "pattern": "auto_ysf_*[0-9]"},
+    # YRA line: Mechanical Movement (left person on the final-area camera)
+    "yml": {"cams": (13,), "stations": (13,), "cmd": [str(TOOLS / "station_breakup.py"), "yml", "--auto"], "pattern": "auto_yml_*[0-9]"},
+    # YRA line: Mechanical Movement #2 (middle person on the final-area camera)
+    "ymm": {"cams": (13,), "stations": (20,), "cmd": [str(TOOLS / "station_breakup.py"), "ymm", "--auto"], "pattern": "auto_ymm_*[0-9]"},
+    # YRA line: Final Inspection (right person on the same camera). Validated on 4 layouts (teal tray, blue bin night and
+    # after midnight, grey boxes); a built-in check against Mechanical Movement leaves out 10-minute blocks that do not agree.
+    "yfi": {"cams": (13,), "stations": (11, 21), "cmd": [str(TOOLS / "station_breakup.py"), "yfi", "--auto"], "pattern": "auto_yfi_*[0-9]"},
 }
 
 
@@ -57,7 +76,14 @@ def auto_reports(job: int | str) -> list:
 
 
 def jobs_for_camera(camera_id: int) -> list[int | str]:
-    jobs = [k for k, v in _jobs_available().items() if camera_id in v["cams"]]
+    """Report jobs for a camera's "Generate now". Two stations can share one camera (YRA Mechanical Movement / Final
+    Inspection both use camera 13); a job with "stations" belongs to those stations' cameras only."""
+    with SessionLocal() as db:
+        cam = db.get(models.Camera, camera_id)
+        sid = cam.station_id if cam else None
+    avail = _jobs_available()
+    jobs = [k for k, v in avail.items() if sid is not None and sid in v.get("stations", ())]
+    jobs = jobs or [k for k, v in avail.items() if camera_id in v["cams"] and not v.get("stations")]
     return jobs or [camera_id]  # a camera without its own station breakup gets the generic report
 
 
@@ -89,7 +115,8 @@ class ReportEngine:
             last[str(job)] = v
             for cam in cams.get(str(job), []):
                 last.setdefault(str(cam), v)
-        return {"running": self.running, "queue": list(self.queue), "last": last, "job_cams": cams,
+        stations = {str(k): list(v["stations"]) for k, v in _jobs_available().items() if v.get("stations")}
+        return {"running": self.running, "queue": list(self.queue), "last": last, "job_cams": cams, "job_stations": stations,
                 "every_hours": REPORT_EVERY_H, "keep_per_camera": KEEP_PER_CAMERA}
 
     # ---------------------------------------------------------------- loop
@@ -116,7 +143,9 @@ class ReportEngine:
 
     def _due(self) -> list[int | str]:
         with SessionLocal() as db:
-            cams = [c for c in db.scalars(select(models.Camera)) if c.enabled and c.station_id and (c.config or {}).get("record")]
+            active = {line.id for line in db.scalars(select(models.Line)) if line.is_active}  # a disabled line gets no reports
+            cams = [c for c in db.scalars(select(models.Camera))
+                    if c.enabled and c.station_id and c.line_id in active and (c.config or {}).get("record")]
         ids = {c.id for c in cams}
         jobs: list[int | str] = []
         for k, v in _jobs_available().items():
@@ -138,7 +167,7 @@ class ReportEngine:
     async def _run(self, job: int | str) -> None:
         self.running = job
         started = time.time()
-        env = dict(os.environ, OMP_NUM_THREADS="1", MKL_NUM_THREADS="1", PYTHONIOENCODING="utf-8")
+        env = dict(os.environ, OMP_NUM_THREADS="1", MKL_NUM_THREADS="1", OPENBLAS_NUM_THREADS="1", PYTHONIOENCODING="utf-8")
         flags = 0x00004000 | 0x08000000 if sys.platform == "win32" else 0  # below-normal priority, no window
         cmd = [sys.executable, *STATION_JOBS[job]["cmd"]] if job in STATION_JOBS else [sys.executable, "-m", "app.services.report_gen", str(job)]
         try:

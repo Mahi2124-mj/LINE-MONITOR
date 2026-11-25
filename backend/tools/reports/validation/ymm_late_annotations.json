@@ -1,0 +1,137 @@
+[
+ {
+  "cycle": 1,
+  "pick_rail": 1792007614.5,
+  "start": 1792007614.5,
+  "end": 1792007626.8,
+  "drop_seen": false,
+  "cycle_sec": 12.3,
+  "note": ""
+ },
+ {
+  "cycle": 2,
+  "pick_rail": 1792007626.8,
+  "start": 1792007626.8,
+  "end": 1792007660.0,
+  "drop_seen": false,
+  "cycle_sec": 33.2,
+  "note": "long cycle: the right person is away (walked out of view to the left 23:46.5-24:22.9)"
+ },
+ {
+  "cycle": 3,
+  "pick_rail": 1792007660.0,
+  "start": 1792007660.0,
+  "end": 1792007671.5,
+  "drop_seen": false,
+  "cycle_sec": 11.5,
+  "note": ""
+ },
+ {
+  "cycle": 4,
+  "pick_rail": 1792007671.5,
+  "start": 1792007671.5,
+  "end": 1792007687.1,
+  "drop_seen": false,
+  "cycle_sec": 15.6,
+  "note": ""
+ },
+ {
+  "cycle": 5,
+  "pick_rail": 1792007687.1,
+  "start": 1792007687.1,
+  "end": 1792007698.25,
+  "drop_seen": false,
+  "cycle_sec": 11.15,
+  "note": ""
+ },
+ {
+  "cycle": 6,
+  "pick_rail": 1792007698.25,
+  "start": 1792007698.25,
+  "end": 1792007720.0,
+  "drop_seen": false,
+  "cycle_sec": 21.75,
+  "note": "long cycle: his left hand goes to the stand at 25:05.1 and 25:09.1 without a clear lift (not counted)"
+ },
+ {
+  "cycle": 7,
+  "pick_rail": 1792007720.0,
+  "start": 1792007720.0,
+  "end": 1792007733.1,
+  "drop_seen": false,
+  "cycle_sec": 13.1,
+  "note": ""
+ },
+ {
+  "cycle": 8,
+  "pick_rail": 1792007733.1,
+  "start": 1792007733.1,
+  "end": 1792007746.5,
+  "drop_seen": false,
+  "cycle_sec": 13.4,
+  "note": ""
+ },
+ {
+  "cycle": 9,
+  "pick_rail": 1792007746.5,
+  "start": 1792007746.5,
+  "end": 1792007760.6,
+  "drop_seen": false,
+  "cycle_sec": 14.1,
+  "note": ""
+ },
+ {
+  "cycle": 10,
+  "pick_rail": 1792007760.6,
+  "start": 1792007760.6,
+  "end": 1792007770.8,
+  "drop_seen": false,
+  "cycle_sec": 10.2,
+  "note": ""
+ },
+ {
+  "cycle": 11,
+  "pick_rail": 1792007770.8,
+  "start": 1792007770.8,
+  "end": 1792007783.7,
+  "drop_seen": false,
+  "cycle_sec": 12.9,
+  "note": ""
+ },
+ {
+  "cycle": 12,
+  "pick_rail": 1792007783.7,
+  "start": 1792007783.7,
+  "end": 1792007795.4,
+  "drop_seen": false,
+  "cycle_sec": 11.7,
+  "note": ""
+ },
+ {
+  "cycle": 13,
+  "pick_rail": 1792007795.4,
+  "start": 1792007795.4,
+  "end": 1792007806.5,
+  "drop_seen": false,
+  "cycle_sec": 11.1,
+  "note": ""
+ },
+ {
+  "cycle": 14,
+  "pick_rail": 1792007806.5,
+  "start": 1792007806.5,
+  "end": 1792007818.0,
+  "drop_seen": false,
+  "cycle_sec": 11.5,
+  "note": ""
+ },
+ {
+  "cycle": 15,
+  "pick_rail": 1792007818.0,
+  "start": 1792007818.0,
+  "end": 1792007831.6,
+  "drop_seen": false,
+  "cycle_sec": 13.6,
+  "note": ""
+ }
+]

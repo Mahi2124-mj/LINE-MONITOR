@@ -1,0 +1,283 @@
+[
+ {
+  "rail": 1,
+  "load": 1792403771.8,
+  "load_local": "15:26:11.8",
+  "rivet": true,
+  "variant": "inner",
+  "set": "2026-10-19, camera 13 (640 recording, validation copy), afternoon INNER rails (riveted at the shelf before the load) with a GREEN grid bin in front of him (from ~15:20; the old rules counted none of them: the bin area is neither blue nor orange, so it was taken for the grey-box layout and the bottom-edge tray rule found nothing). Every rail read on contact sheets of the right person every 0.5 s, 15:26:00-15:38:31 (no gaps): load = he turns from the shelf with the rail and puts it into the lower fixture of the Final Inspection machine; time = start of the fixture-area image motion - 0.5 s where that run lies within 1 s of the frame read (37 of 39), else the frame read. Not counted: arm raised to the top of the machine without a rail, waiting, rail swung into the bin.",
+  "note": "first rail of the set; the green grid bin stands in front of him (from ~15:20)"
+ },
+ {
+  "rail": 2,
+  "load": 1792403811.3,
+  "load_local": "15:26:51.3",
+  "rivet": true,
+  "variant": "inner",
+  "note": "waited ~25 s with his hands down before it (no rail in the holder), at the shelf 15:26:46-15:26:51"
+ },
+ {
+  "rail": 3,
+  "load": 1792403827.91,
+  "load_local": "15:27:07.9",
+  "rivet": true,
+  "variant": "inner",
+  "note": "the middle person's release for this rail is not found by the Mechanical Movement #2 rules (one long cycle 15:26:45-15:27:14)"
+ },
+ {
+  "rail": 4,
+  "load": 1792403857.9,
+  "load_local": "15:27:37.9",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 5,
+  "load": 1792403872.22,
+  "load_local": "15:27:52.2",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 6,
+  "load": 1792403888.02,
+  "load_local": "15:28:08.0",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 7,
+  "load": 1792403925.47,
+  "load_local": "15:28:45.5",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 8,
+  "load": 1792403942.95,
+  "load_local": "15:29:02.0",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 9,
+  "load": 1792403963.19,
+  "load_local": "15:29:23.2",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 10,
+  "load": 1792403980.05,
+  "load_local": "15:29:40.1",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 11,
+  "load": 1792404003.34,
+  "load_local": "15:30:03.3",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 12,
+  "load": 1792404045.94,
+  "load_local": "15:30:45.9",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 13,
+  "load": 1792404059.05,
+  "load_local": "15:30:59.0",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 14,
+  "load": 1792404075.31,
+  "load_local": "15:31:15.3",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 15,
+  "load": 1792404086.89,
+  "load_local": "15:31:26.9",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 16,
+  "load": 1792404104.57,
+  "load_local": "15:31:44.6",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 17,
+  "load": 1792404119.17,
+  "load_local": "15:31:59.2",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 18,
+  "load": 1792404132.74,
+  "load_local": "15:32:12.7",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 19,
+  "load": 1792404147.1,
+  "load_local": "15:32:27.1",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 20,
+  "load": 1792404168.49,
+  "load_local": "15:32:48.5",
+  "rivet": true,
+  "variant": "inner",
+  "note": "arm raised to the top of the machine 15:32:49-15:32:50 after the load (pressing / adjusting at the upper machine); rail out ~15:32:52, into the bin 15:32:55"
+ },
+ {
+  "rail": 21,
+  "load": 1792404184.97,
+  "load_local": "15:33:04.0",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 22,
+  "load": 1792404199.17,
+  "load_local": "15:33:19.2",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 23,
+  "load": 1792404283.97,
+  "load_local": "15:34:43.0",
+  "rivet": true,
+  "variant": "inner",
+  "note": "after a wait of ~75 s (standing, facing the middle person 15:33:25-15:34:30; arm up to the top of the machine 15:33:41-15:33:44 without a rail)"
+ },
+ {
+  "rail": 24,
+  "load": 1792404299.89,
+  "load_local": "15:34:59.9",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 25,
+  "load": 1792404313.74,
+  "load_local": "15:35:13.7",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 26,
+  "load": 1792404329.07,
+  "load_local": "15:35:29.1",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 27,
+  "load": 1792404341.67,
+  "load_local": "15:35:41.7",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 28,
+  "load": 1792404358.73,
+  "load_local": "15:35:58.7",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 29,
+  "load": 1792404371.67,
+  "load_local": "15:36:11.7",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 30,
+  "load": 1792404387.3,
+  "load_local": "15:36:27.3",
+  "rivet": true,
+  "variant": "inner",
+  "note": "the rail is held horizontally at the lower fixture (no motion in the fixture area); time read from the frames"
+ },
+ {
+  "rail": 31,
+  "load": 1792404400.5,
+  "load_local": "15:36:40.5",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 32,
+  "load": 1792404413.43,
+  "load_local": "15:36:53.4",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 33,
+  "load": 1792404427.45,
+  "load_local": "15:37:07.5",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 34,
+  "load": 1792404439.84,
+  "load_local": "15:37:19.8",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 35,
+  "load": 1792404453.0,
+  "load_local": "15:37:33.0",
+  "rivet": true,
+  "variant": "inner",
+  "note": "arm raised to the top of the machine 15:37:33.4-15:37:35.4 right after he turns with the rail; rail at the fixture ~15:37:36, into the bin 15:37:39"
+ },
+ {
+  "rail": 36,
+  "load": 1792404466.98,
+  "load_local": "15:37:46.0",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 37,
+  "load": 1792404481.1,
+  "load_local": "15:38:01.1",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 38,
+  "load": 1792404494.93,
+  "load_local": "15:38:14.9",
+  "rivet": true,
+  "variant": "inner"
+ },
+ {
+  "rail": 39,
+  "load": 1792404510.18,
+  "load_local": "15:38:30.2",
+  "rivet": true,
+  "variant": "inner"
+ }
+]

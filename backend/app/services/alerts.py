@@ -50,6 +50,7 @@ class AlertEngine:
 
     def __init__(self) -> None:
         self.offline_since: dict[int, float] = {}
+        self.last_bottleneck: dict[int, str] = {}  # line id -> bottleneck person at the last line check
         self.last_line_check = 0.0
         self._task: asyncio.Task | None = None
 
@@ -93,8 +94,13 @@ class AlertEngine:
                 create_alert("camera_offline", "critical", f"Camera '{c.name}' offline: {err}", line_id=c.line_id,
                              station_id=c.station_id, camera_id=c.id, dedupe_min=60)
 
-        # stoppage: a station that has the part / operator but has not finished a cycle for long
+        # stoppage: a station that has the part / operator but has not finished a cycle for long. Steps counted by the
+        # step detectors get their stoppage alerts from services/detector_feed.py (the live timer misses their cycles)
+        from .detector_feed import feed
+
         for s in live.snapshot():
+            if feed.owns(s["station_id"]):
+                continue
             meta = stations.get(s["station_id"])
             el = s["cycle_elapsed_sec"]
             if meta is None or el is None or s["state"] not in ("working", "idle"):
@@ -112,6 +118,7 @@ class AlertEngine:
 
     def _line_checks(self, lines: dict[int, models.Line]) -> None:
         from .analytics import compute_line
+        from .detector_feed import feed
 
         end = datetime.now()
         start = end - timedelta(hours=1)
@@ -120,16 +127,31 @@ class AlertEngine:
                 if not line.is_active:
                     continue
                 la = compute_line(db, line, start, end, with_recs=False)
-                bn = next((s for s in la.stations if s.is_bottleneck), None)
-                if bn and bn.stats.avg_content and bn.stats.avg_content > line.takt_time_sec:
+                # a new bottleneck person (last hour): warning when he is slower than takt, else info. Only when every
+                # person has enough cycles up to now (the live count of some steps comes minutes late, or is catching up)
+                fresh = end - timedelta(minutes=15)
+                timed = [o for o in la.operators if o.per_part_sec and o.count >= 10 and o.last_cycle_at and o.last_cycle_at >= fresh]
+                if la.bottleneck_label and la.line_pace_sec and len(timed) >= 2 and len(timed) == len(la.operators):  # everyone timed
+                    # only a clear bottleneck: in a well balanced line the slowest person changes every few minutes
+                    per = sorted((o.per_part_sec or 0.0 for o in timed), reverse=True)
+                    clear = per[0] - per[1] >= max(0.3, 0.02 * per[0])
+                    if clear and self.last_bottleneck.get(line.id) != la.bottleneck_label:
+                        over = la.line_pace_sec > line.takt_time_sec
+                        create_alert("bottleneck", "warning" if over else "info",
+                                     f"{la.bottleneck_label} is now the bottleneck: {la.line_pace_sec:.1f} s per part",
+                                     line_id=line.id, station_id=la.bottleneck_station_id, dedupe_min=60)
+                        self.last_bottleneck[line.id] = la.bottleneck_label
+                if la.line_pace_sec and la.line_pace_sec > line.takt_time_sec and len(timed) == len(la.operators):
                     create_alert("over_takt", "warning",
-                                 f"{line.name}: bottleneck Step {bn.station.sequence} {bn.station.name} needs {bn.stats.avg_content:.1f}s > takt {line.takt_time_sec:.0f}s — line cannot meet demand",
-                                 line_id=line.id, station_id=bn.station.id, dedupe_min=60)
+                                 f"{la.bottleneck_label} needs {la.line_pace_sec:.1f} s per part, takt is {line.takt_time_sec:.1f} s",
+                                 line_id=line.id, station_id=la.bottleneck_station_id, dedupe_min=60)
                 if la.balance_efficiency_pct is not None and la.balance_efficiency_pct < 70:
-                    create_alert("unbalanced", "info", f"{line.name}: line balance efficiency only {la.balance_efficiency_pct:.0f}% — redistribute work between steps",
+                    create_alert("unbalanced", "info", f"{line.name}: line balance efficiency only {la.balance_efficiency_pct:.0f}% — redistribute work between operators",
                                  line_id=line.id, dedupe_min=240)
                 for s in la.stations:
                     mv = s.movement
+                    if feed.owns(s.station.id):
+                        continue
                     if s.stats.count >= 10 and ((mv.avg_reach_count or 0) >= 1.5 or (mv.avg_walk_m or 0) >= 2.0):
                         create_alert("excess_motion", "info",
                                      f"{line.name} · Step {s.station.sequence} {s.station.name}: {mv.avg_reach_count or 0:.1f} reaches & {mv.avg_walk_m or 0:.1f} m walking per cycle",
